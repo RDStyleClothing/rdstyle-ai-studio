@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V1.3</title>
+<title>RD STYLE AI STUDIO — V1.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -264,7 +264,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.3</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.5</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -409,7 +409,7 @@ select.select option{background:#0d0d0d}
         <textarea id="notes" class="textarea" placeholder="e.g. Include subtle horn buttons, show interior lining texture, contrast topstitching…"></textarea>
       </section>
 
-      <section>
+      <section id="outputSizeSection">
         <label class="field-label">Output Size</label>
         <div style="margin-bottom:14px">
           <label class="sub-label">Preset</label>
@@ -686,6 +686,7 @@ function setMode(m){
   document.getElementById('moveConfig').classList.toggle('hidden',m!=='move');
   document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
   document.getElementById('moveNote').classList.toggle('hidden',m!=='move');
+  document.getElementById('outputSizeSection').classList.toggle('hidden',m==='move');
   document.getElementById('genLabel').textContent = m==='move' ? (S.moveEngine==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
 }
 function setMoveEngine(e){
@@ -1013,7 +1014,9 @@ function showResult(render){
                 :                  '<span class="tag">ON MODEL</span>';
   const sizeTag = isVideo
     ? `<span class="tag dim">1080p ${veoAspect(render.meta.spec)} MP4</span>`
-    : (render.meta.spec ? `<span class="tag dim">${render.meta.spec.width}×${render.meta.spec.height} ${mode==='move'?'GIF':render.meta.spec.format.toUpperCase()}</span>` : '');
+    : mode==='move'
+      ? `<span class="tag dim">LOOP GIF</span>`
+      : (render.meta.spec ? `<span class="tag dim">${render.meta.spec.width}×${render.meta.spec.height} ${render.meta.spec.format.toUpperCase()}</span>` : '');
   bar.innerHTML = `
     <div class="ib-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
     <div class="ib-tags">
@@ -1058,7 +1061,7 @@ async function generateMoveVeo(meta){
 async function veoSubmit(imageDataUrl, prompt, aspect, minimal=false){
   const mime = imageDataUrl.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
   const b64 = imageDataUrl.split(',')[1];
-  const instances = [{ prompt, image:{ imageBytes:b64, mimeType:mime } }];
+  const instances = [{ prompt, image:{ inlineData:{ mimeType:mime, data:b64 } } }];
   const body = minimal ? { instances } : { instances, parameters:{ aspectRatio:aspect, resolution:'1080p', generateAudio:false, sampleCount:1 } };
   const resp = await fetch(`${VEO_BASE}/models/${VEO_MODEL}:predictLongRunning?key=${encodeURIComponent(S.apiKey)}`,{
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
@@ -1471,7 +1474,7 @@ function renderCatalog(){
       </div>
       <div class="cat-info">
         <div class="row"><span class="nm">${esc(r.styleName)}</span><span class="dt">${new Date(r.timestamp).toLocaleDateString()}</span></div>
-        <div class="sub">${esc(r.meta.category)} · ${r.meta.mode==='move'?(r.kind==='video'?'Move · MP4':'Move · GIF'):(r.transparent?'Transparent':'On Model')}${r.meta.spec?` · ${r.meta.spec.width}×${r.meta.spec.height}`:''}</div>
+        <div class="sub">${esc(r.meta.category)} · ${r.meta.mode==='move'?(r.kind==='video'?'Move · MP4':'Move · GIF'):(r.transparent?'Transparent':'On Model')}${(r.meta.mode!=='move'&&r.meta.spec)?` · ${r.meta.spec.width}×${r.meta.spec.height}`:''}</div>
       </div>
     </div>`).join('')}</div>`;
 }
