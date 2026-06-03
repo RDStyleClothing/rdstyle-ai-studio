@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V1.1</title>
+<title>RD STYLE AI STUDIO — V1.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -117,6 +117,7 @@ select.select option{background:#0d0d0d}
 .result{position:absolute;inset:0;border-radius:18px;overflow:hidden}
 .result.transparent{background-color:#0a0a0a;background-image:var(--checker);background-size:22px 22px;background-position:0 0,11px 11px}
 .result img{width:100%;height:100%;box-shadow:0 30px 60px rgba(0,0,0,0.5);border-radius:18px}
+.result video{width:100%;height:100%;object-fit:cover;box-shadow:0 30px 60px rgba(0,0,0,0.5);border-radius:18px;background:#000}
 .result.transparent img{object-fit:contain}
 .result:not(.transparent) img{object-fit:cover}
 .meta-overlay{position:absolute;top:22px;left:22px;display:flex;flex-direction:column;gap:8px;max-width:75%}
@@ -142,6 +143,8 @@ select.select option{background:#0d0d0d}
 .info-bar .ib-tags{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
 .info-bar .tag{background:var(--fill)}
 .tag.move{background:#fff;color:#000;border-color:#fff}
+.play-badge{position:absolute;top:8px;left:8px;z-index:3;display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-family:var(--font-mono);font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#fff;pointer-events:none}
+.play-badge svg{width:9px;height:9px;fill:#fff;stroke:none}
 
 /* 3-up mode picker */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -261,7 +264,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.0</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.3</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -314,7 +317,7 @@ select.select option{background:#0d0d0d}
           <b>Ghost Mannequin.</b> Renders on flat white, then auto-extracts a true transparent PNG (clean alpha channel) for line sheets and lookbooks.
         </div>
         <div class="note-box hidden" id="moveNote">
-          <b>Move.</b> On-model only. Generates a few sequential frames of the model in motion, then stitches them into a looping animated GIF for social posts and website headers. Uses one Gemini call per frame.
+          <b>Move.</b> On-model only. Creates short motion clips for social and web — choose the <b>Cinematic</b> engine for a real MP4 (fluid, paid Veo) or <b>Quick</b> for a free animated-GIF preview.
         </div>
       </section>
 
@@ -345,7 +348,11 @@ select.select option{background:#0d0d0d}
       </section>
 
       <section id="moveConfig" class="hidden">
-        <label class="field-label">Motion</label>
+        <label class="field-label">Motion Engine</label>
+        <div class="pill-row" id="moveEngineGroup" style="margin-bottom:16px">
+          <button class="pill active" data-engine="veo" onclick="setMoveEngine('veo')">Cinematic · MP4</button>
+          <button class="pill" data-engine="frames" onclick="setMoveEngine('frames')">Quick · GIF</button>
+        </div>
         <div style="display:flex;flex-direction:column;gap:16px">
           <div>
             <label class="sub-label">Action</label>
@@ -359,7 +366,7 @@ select.select option{background:#0d0d0d}
               <option>Adjusting the collar / cuffs</option>
             </select>
           </div>
-          <div>
+          <div id="framesRow" class="hidden">
             <label class="sub-label">Frames (more = smoother, slower, more quota)</label>
             <select class="select" id="moveFrames">
               <option value="4">4 frames</option>
@@ -367,6 +374,9 @@ select.select option{background:#0d0d0d}
               <option value="6">6 frames</option>
             </select>
           </div>
+        </div>
+        <div class="note-box" id="veoNote" style="margin-top:14px">
+          <b>Cinematic.</b> Generates an On-Model still, then animates it into a real ~8&nbsp;second 1080p MP4 with Veo 3.1 Fast — fluid, photoreal motion. <b>Requires a paid-tier Gemini key</b> (Veo has no free tier) and costs roughly $0.80–$1.20 per clip. Takes 1–2&nbsp;minutes.
         </div>
       </section>
 
@@ -399,6 +409,48 @@ select.select option{background:#0d0d0d}
         <textarea id="notes" class="textarea" placeholder="e.g. Include subtle horn buttons, show interior lining texture, contrast topstitching…"></textarea>
       </section>
 
+      <section>
+        <label class="field-label">Output Size</label>
+        <div style="margin-bottom:14px">
+          <label class="sub-label">Preset</label>
+          <select class="select" id="presetSel" onchange="applyPreset(this.value)"></select>
+        </div>
+        <div class="grid2" style="gap:10px;margin-bottom:14px">
+          <div>
+            <label class="sub-label">Width (px)</label>
+            <input type="number" min="64" max="8000" step="1" id="specW" class="text-input" value="1200" oninput="onSpecEdit()"/>
+          </div>
+          <div>
+            <label class="sub-label">Height (px)</label>
+            <input type="number" min="64" max="8000" step="1" id="specH" class="text-input" value="1600" oninput="onSpecEdit()"/>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="sub-label">Fit</label>
+            <div class="pill-row" id="fitModeGroup">
+              <button class="pill active" data-fitmode="contain" onclick="setFitMode('contain')">Contain · Pad</button>
+              <button class="pill" data-fitmode="cover" onclick="setFitMode('cover')">Cover · Crop</button>
+            </div>
+          </div>
+          <div>
+            <label class="sub-label">Background / Padding</label>
+            <div class="pill-row" id="bgGroup">
+              <button class="pill active" data-bg="transparent" onclick="setBg('transparent')">Transparent</button>
+              <button class="pill" data-bg="white" onclick="setBg('white')">White</button>
+            </div>
+          </div>
+          <div>
+            <label class="sub-label">Format</label>
+            <div class="pill-row" id="formatGroup">
+              <button class="pill active" data-format="png" onclick="setFormat('png')">PNG</button>
+              <button class="pill" data-format="jpeg" onclick="setFormat('jpeg')">JPEG</button>
+            </div>
+          </div>
+        </div>
+        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>).</div>
+      </section>
+
       <button class="generate-btn" id="genBtn" onclick="generate()">
         <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span id="genLabel">Create 3D Render</span>
@@ -425,6 +477,7 @@ select.select option{background:#0d0d0d}
             </div>
             <div class="result hidden" id="result">
               <img id="resultImg" alt="Render preview"/>
+              <video id="resultVideo" class="hidden" autoplay loop muted playsinline></video>
               <div class="stage-actions">
                 <button class="act-btn act-primary" onclick="downloadCurrent()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
                 <button class="act-btn act-ghost" onclick="shareCurrent()"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
@@ -472,7 +525,7 @@ select.select option{background:#0d0d0d}
 <footer class="footer">
   <div class="left">
     <span class="dot g"><i></i>Engine Active</span>
-    <span class="dot b"><i></i>Gemini 2.5 Flash Image</span>
+    <span class="dot b"><i></i>Gemini 2.5 Flash · Veo 3.1</span>
   </div>
   <div>© 2026 RD Style AI Studio · Vault Synced Locally</div>
 </footer>
@@ -540,11 +593,35 @@ select.select option{background:#0d0d0d}
 const CATEGORIES = ['Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
+const VEO_MODEL = 'veo-3.1-fast-generate-preview';   // image-to-video, Fast tier
+const VEO_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+// ---------------------------------------------------------------------
+// CUSTOMER OUTPUT PRESETS  (Phase 2 lives here)
+// To add a customer's image guideline, add an object to this array. Each
+// one becomes an option in the Output Size > Preset dropdown that fills
+// the fields below. No other code changes needed.
+//   width / height : exact output pixels
+//   fit            : 'contain' (pad, never crops the product) | 'cover' (crop to fill)
+//   bg             : 'transparent' | 'white'   (padding / flatten color)
+//   format         : 'png' | 'jpeg'
+//   quality        : 0–1  (JPEG only)
+// ---------------------------------------------------------------------
+const CUSTOMER_PRESETS = [
+  { name:'Lookbook · 1200×1600 PNG (transparent)', width:1200, height:1600, fit:'contain', bg:'transparent', format:'png',  quality:0.92 },
+  { name:'Marketplace · 2048×2048 JPEG (white)',   width:2048, height:2048, fit:'contain', bg:'white',       format:'jpeg', quality:0.90 },
+  { name:'Social Vertical · 1080×1350 JPEG',       width:1080, height:1350, fit:'cover',   bg:'white',       format:'jpeg', quality:0.90 },
+];
+
+// Aspect ratios Gemini 2.5 Flash Image can be steered to (label -> w/h).
+const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4',5/4],['1:1',1],['4:5',4/5],['3:4',3/4],['2:3',2/3],['9:16',9/16]];
 
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
   mode:'render', category:'Outerwear', fit:'Slim',
+  moveEngine:'veo',
   refImage:null,
+  spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92 },
   current:null,          // current preview render object
   session:[],            // in-session renders (newest first)
   catalog:[],            // persisted renders (newest first)
@@ -559,6 +636,9 @@ function init(){
   buildCategoryButtons();
   buildFitButtons();
   buildFilterCategories();
+  buildPresetOptions();
+  refreshSpecUI();
+  setMoveEngine(S.moveEngine);
   updateKeyDot();
   openDB().then(loadCatalog);
 }
@@ -606,10 +686,62 @@ function setMode(m){
   document.getElementById('moveConfig').classList.toggle('hidden',m!=='move');
   document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
   document.getElementById('moveNote').classList.toggle('hidden',m!=='move');
-  document.getElementById('genLabel').textContent = m==='move'?'Create Move Loop':'Create 3D Render';
+  document.getElementById('genLabel').textContent = m==='move' ? (S.moveEngine==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
+}
+function setMoveEngine(e){
+  S.moveEngine=e;
+  document.querySelectorAll('#moveEngineGroup .pill').forEach(b=>b.classList.toggle('active',b.dataset.engine===e));
+  document.getElementById('framesRow').classList.toggle('hidden', e!=='frames');
+  document.getElementById('veoNote').classList.toggle('hidden', e!=='veo');
+  document.getElementById('genLabel').textContent = (S.mode==='move') ? (e==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
 }
 function setCategory(c){ S.category=c; buildCategoryButtons(); }
 function setFit(f){ S.fit=f; buildFitButtons(); }
+
+// ---------- OUTPUT SPEC (size / fit / format) ----------
+function clampInt(v,min,max,dflt){ const n=parseInt(v,10); if(isNaN(n))return dflt; return Math.max(min,Math.min(max,n)); }
+
+function buildPresetOptions(){
+  const sel=document.getElementById('presetSel');
+  sel.innerHTML='<option value="custom">Custom</option>'+CUSTOMER_PRESETS.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
+}
+function applyPreset(v){
+  if(v==='custom') return;
+  const p=CUSTOMER_PRESETS[+v]; if(!p) return;
+  S.spec={ width:p.width, height:p.height, fit:p.fit||'contain', bg:p.bg||'white', format:p.format||'png', quality:p.quality||0.92 };
+  refreshSpecUI();
+}
+function markCustom(){ const sel=document.getElementById('presetSel'); if(sel) sel.value='custom'; }
+
+function setFitMode(v){ S.spec.fit=v; markCustom(); refreshSpecUI(); }
+function setBg(v){ S.spec.bg=v; markCustom(); refreshSpecUI(); }
+function setFormat(v){
+  S.spec.format=v;
+  if(v==='jpeg' && S.spec.bg==='transparent') S.spec.bg='white'; // JPEG has no alpha
+  markCustom(); refreshSpecUI();
+}
+function onSpecEdit(){
+  S.spec.width=clampInt(document.getElementById('specW').value,64,8000,1200);
+  S.spec.height=clampInt(document.getElementById('specH').value,64,8000,1600);
+  markCustom(); refreshSpecUI();
+}
+function nearestAspectRatio(w,h){
+  const target=w/h; let best=SUPPORTED_AR[0], bd=Infinity;
+  for(const [label,r] of SUPPORTED_AR){ const d=Math.abs(Math.log(r/target)); if(d<bd){ bd=d; best=[label,r]; } }
+  return best[0];
+}
+function refreshSpecUI(){
+  document.querySelectorAll('#fitModeGroup .pill').forEach(b=>b.classList.toggle('active',b.dataset.fitmode===S.spec.fit));
+  document.querySelectorAll('#bgGroup .pill').forEach(b=>b.classList.toggle('active',b.dataset.bg===S.spec.bg));
+  document.querySelectorAll('#formatGroup .pill').forEach(b=>b.classList.toggle('active',b.dataset.format===S.spec.format));
+  const tBtn=document.querySelector('#bgGroup .pill[data-bg="transparent"]');
+  if(tBtn){ const off=S.spec.format==='jpeg'; tBtn.style.opacity=off?'0.35':''; tBtn.style.pointerEvents=off?'none':''; }
+  const wEl=document.getElementById('specW'), hEl=document.getElementById('specH');
+  if(document.activeElement!==wEl) wEl.value=S.spec.width;
+  if(document.activeElement!==hEl) hEl.value=S.spec.height;
+  document.getElementById('specAR').textContent=nearestAspectRatio(S.spec.width,S.spec.height);
+  document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()}`;
+}
 
 function handleRef(e){
   const file = e.target.files?.[0]; if(!file) return;
@@ -702,7 +834,7 @@ async function buildClaudePrompt(localPrompt, meta){
 // =====================================================================
 // GEMINI CALL (REST, with 429 backoff)
 // =====================================================================
-async function callGemini(prompt, meta, attempt=0, extraImages=[]){
+async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false){
   const parts = [{ text: prompt }];
   if(meta.hasRef && S.refImage){
     const mime = S.refImage.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
@@ -713,14 +845,20 @@ async function callGemini(prompt, meta, attempt=0, extraImages=[]){
     const m = ex.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
     parts.push({ inline_data:{ data:ex.split(',')[1], mime_type:m } });
   }
+  const genCfg = { responseModalities:['IMAGE','TEXT'] };
+  if(meta.aspectRatio && !dropAR) genCfg.imageConfig = { aspectRatio: meta.aspectRatio };
   const delays = [2000,4000,8000];
   const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${S.apiKey}`,{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ contents:{ parts }, generationConfig:{ responseModalities:['IMAGE','TEXT'] } })
+    body:JSON.stringify({ contents:{ parts }, generationConfig:genCfg })
   });
   if(resp.status===429){
-    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1,extraImages); }
+    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1,extraImages,dropAR); }
     throw new Error('429: RESOURCE_EXHAUSTED — quota limit reached.');
+  }
+  // Some API revisions reject the aspectRatio field; drop it and retry once.
+  if(resp.status===400 && meta.aspectRatio && !dropAR){
+    return callGemini(prompt,meta,attempt,extraImages,true);
   }
   if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Gemini error ${resp.status}`); }
   const data = await resp.json();
@@ -755,6 +893,9 @@ async function generate(){
     hasRef: !!S.refImage,
     motion: document.getElementById('moveMotion').value,
     frames: parseInt(document.getElementById('moveFrames').value,10)||5,
+    engine: S.moveEngine,
+    spec: { ...S.spec },
+    aspectRatio: nearestAspectRatio(S.spec.width, S.spec.height),
     model: {
       gender: document.getElementById('mGender').value,
       age: document.getElementById('mAge').value,
@@ -764,20 +905,26 @@ async function generate(){
     }
   };
 
+  const veoMove = (meta.mode==='move' && meta.engine==='veo');
   setProcessing(true);
-  document.getElementById('procTitle').textContent = meta.mode==='move' ? 'Building Motion Loop' : 'Generating High-Res Asset';
+  document.getElementById('procTitle').textContent = veoMove ? 'Generating Video Clip' : (meta.mode==='move' ? 'Building Motion Loop' : 'Generating High-Res Asset');
   let step=0, iv=null;
   if(meta.mode!=='move'){
     document.getElementById('procStep').textContent=STEPS[0];
     iv=setInterval(()=>{ if(step<STEPS.length-1) document.getElementById('procStep').textContent=STEPS[++step]; },2200);
   }else{
-    document.getElementById('procStep').textContent='Preparing motion frames…';
+    document.getElementById('procStep').textContent = veoMove ? 'Preparing…' : 'Preparing motion frames…';
   }
 
   try{
-    let image;
+    let image, video=null, poster=null, kind='image', ephemeral=false;
     if(meta.mode==='move'){
-      image = await generateMove(meta);
+      if(meta.engine==='veo'){
+        const out = await generateMoveVeo(meta);
+        video = out.video; poster = out.poster; image = out.poster; kind='video'; ephemeral=out.ephemeral;
+      }else{
+        image = await generateMove(meta);
+      }
     }else{
       let prompt = buildPrompt(meta);
       if(S.anthropicKey){
@@ -790,11 +937,15 @@ async function generate(){
         document.getElementById('procStep').textContent='Extracting transparency…';
         try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
       }
+      // Enforce the exact customer output size / fit / format
+      document.getElementById('procStep').textContent='Applying output size…';
+      image = await fitToSpec(image, meta.spec);
     }
 
+    const transparent = (meta.mode==='render' && meta.spec.format!=='jpeg' && meta.spec.bg==='transparent');
     const render = {
       id: crypto.randomUUID(),
-      styleName, image, meta, transparent: meta.mode==='render',
+      styleName, image, video, poster, kind, ephemeral, meta, transparent,
       timestamp: Date.now(),
       filename: buildFilename(styleName, meta),
     };
@@ -802,7 +953,8 @@ async function generate(){
     await saveToCatalog(render);
     showResult(render);
     renderTray();
-    toast(meta.mode==='move'?'Move loop complete':'Render complete');
+    toast(veoMove ? (ephemeral?'Video ready (not saved offline — see note)':'Video clip ready') : (meta.mode==='move'?'Move loop complete':'Render complete'));
+    if(veoMove && ephemeral) toast('Browser blocked saving the MP4 bytes; the link expires — download it now','err');
   }catch(err){
     const msg = err?.message||'';
     const is429 = msg.includes('429')||msg.toLowerCase().includes('quota')||msg.toLowerCase().includes('resource_exhausted');
@@ -822,7 +974,9 @@ function setProcessing(on){
   document.getElementById('infoBar').classList.toggle('hidden', on || !S.current);
   const btn=document.getElementById('genBtn'); btn.disabled=on;
   const move = S.mode==='move';
-  document.getElementById('genLabel').textContent = on ? (move?'Building loop…':'Rendering asset…') : (move?'Create Move Loop':'Create 3D Render');
+  const moveIdle = S.moveEngine==='veo'?'Create Video Clip':'Create GIF Loop';
+  const moveBusy = S.moveEngine==='veo'?'Generating video…':'Building loop…';
+  document.getElementById('genLabel').textContent = on ? (move?moveBusy:'Rendering asset…') : (move?moveIdle:'Create 3D Render');
   document.getElementById('genIcon').classList.toggle('spin',on);
   if(on){
     document.getElementById('genIcon').innerHTML='<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>';
@@ -838,20 +992,133 @@ function showResult(render){
   const res=document.getElementById('result');
   res.classList.remove('hidden');
   res.classList.toggle('transparent', render.transparent);
-  document.getElementById('resultImg').src=render.image;
+  const img=document.getElementById('resultImg');
+  const vid=document.getElementById('resultVideo');
+  const isVideo = render.kind==='video' && render.video;
+  if(isVideo){
+    img.classList.add('hidden');
+    vid.classList.remove('hidden');
+    vid.src=render.video;
+    vid.play().catch(()=>{});
+  }else{
+    vid.pause(); vid.removeAttribute('src'); vid.classList.add('hidden');
+    img.classList.remove('hidden');
+    img.src=render.image;
+  }
   const bar=document.getElementById('infoBar');
   bar.classList.remove('hidden');
   const mode=render.meta.mode;
   const modeTag = mode==='render' ? '<span class="tag">TRANSPARENT</span>'
-                : mode==='move'  ? '<span class="tag move">MOVE · LOOP</span>'
+                : mode==='move'  ? `<span class="tag move">MOVE · ${isVideo?'MP4':'GIF'}</span>`
                 :                  '<span class="tag">ON MODEL</span>';
+  const sizeTag = isVideo
+    ? `<span class="tag dim">1080p ${veoAspect(render.meta.spec)} MP4</span>`
+    : (render.meta.spec ? `<span class="tag dim">${render.meta.spec.width}×${render.meta.spec.height} ${mode==='move'?'GIF':render.meta.spec.format.toUpperCase()}</span>` : '');
   bar.innerHTML = `
     <div class="ib-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
     <div class="ib-tags">
       <span class="tag dim">${esc(render.meta.category)}</span>
       <span class="tag dim">${esc(render.meta.fabric)}</span>
+      ${sizeTag}
       ${modeTag}
     </div>`;
+}
+
+// =====================================================================
+// MOVE · CINEMATIC — Veo 3.1 image-to-video (submit -> poll -> download)
+// Generates an On-Model still, then animates THAT exact frame so the
+// garment + model stay identical while the motion is real video.
+// =====================================================================
+function veoAspect(spec){ return (spec && spec.width < spec.height) ? '9:16' : '16:9'; }
+
+function buildVeoPrompt(meta){
+  return `Animate this exact photograph into a short, photorealistic fashion clip. Keep the SAME model (same face, hair, body) wearing the SAME ${meta.category} — "${meta.styleName}" — with the identical color, fabric and fit, and the SAME background and lighting. Do not restyle, recolor, or swap the garment. Motion: ${meta.motion}. Produce smooth, natural, true-to-life movement with a correct walking gait and weight shift; understated and cinematic. Keep the framing stable. No morphing, no warping limbs, no extra people entering frame, no on-screen text, captions, watermarks or logos.`;
+}
+
+async function generateMoveVeo(meta){
+  // 1) On-model still to animate
+  document.getElementById('procStep').textContent='Rendering the on-model still…';
+  const stillMeta = { ...meta, mode:'model' };
+  const still = await callGemini(buildPrompt(stillMeta), stillMeta);
+  const poster = await fitToSpec(still, { ...meta.spec });
+
+  // 2) Submit to Veo
+  document.getElementById('procStep').textContent='Submitting to Veo…';
+  const opName = await veoSubmit(still, buildVeoPrompt(meta), veoAspect(meta.spec));
+
+  // 3) Poll until done
+  const uri = await veoPoll(opName);
+
+  // 4) Download the MP4
+  document.getElementById('procStep').textContent='Downloading video…';
+  const dl = await veoDownload(uri);
+  return { video: dl.url, poster, ephemeral: dl.ephemeral };
+}
+
+async function veoSubmit(imageDataUrl, prompt, aspect, minimal=false){
+  const mime = imageDataUrl.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
+  const b64 = imageDataUrl.split(',')[1];
+  const instances = [{ prompt, image:{ imageBytes:b64, mimeType:mime } }];
+  const body = minimal ? { instances } : { instances, parameters:{ aspectRatio:aspect, resolution:'1080p', generateAudio:false, sampleCount:1 } };
+  const resp = await fetch(`${VEO_BASE}/models/${VEO_MODEL}:predictLongRunning?key=${encodeURIComponent(S.apiKey)}`,{
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if(resp.status===403){ throw new Error('Veo access denied (403). The Cinematic engine needs a PAID-tier Gemini key with Veo enabled. Switch Move to the Quick engine for a free GIF.'); }
+  if(resp.status===429){ throw new Error('429: Veo rate/quota limit reached.'); }
+  if(resp.status===400 && !minimal){ return veoSubmit(imageDataUrl, prompt, aspect, true); } // retry without parameters
+  if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Veo submit failed (${resp.status})`); }
+  const data = await resp.json();
+  if(!data.name) throw new Error('Veo returned no operation name.');
+  return data.name;
+}
+
+async function veoPoll(opName){
+  const start=Date.now(), MAXMS=5*60*1000;
+  while(true){
+    if(Date.now()-start>MAXMS) throw new Error('Veo timed out after 5 minutes. Try again or use the Quick engine.');
+    await new Promise(r=>setTimeout(r,9000));
+    const secs=Math.round((Date.now()-start)/1000);
+    document.getElementById('procStep').textContent=`Rendering video… ${secs}s (usually 1–2 min)`;
+    const resp=await fetch(`${VEO_BASE}/${opName}?key=${encodeURIComponent(S.apiKey)}`);
+    if(resp.status===429){ continue; }
+    if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Veo poll failed (${resp.status})`); }
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message || 'Veo generation failed.');
+    if(data.done){
+      const uri=findVideoUri(data.response||data);
+      if(!uri) throw new Error('Veo finished but no video URL was found in the response.');
+      return uri;
+    }
+  }
+}
+
+function findVideoUri(obj){
+  let found=null;
+  (function walk(o){
+    if(found||o==null) return;
+    if(typeof o==='string'){ if(/^https?:\/\//.test(o) && (/\.mp4(\?|$)/i.test(o)||/:download/i.test(o)||/\/files\//i.test(o))) found=o; return; }
+    if(Array.isArray(o)){ o.forEach(walk); return; }
+    if(typeof o==='object'){
+      for(const k of ['uri','videoUri','fileUri','downloadUri']){ if(typeof o[k]==='string' && /^https?:/.test(o[k])){ found=o[k]; return; } }
+      for(const k in o) walk(o[k]);
+    }
+  })(obj);
+  return found;
+}
+
+async function veoDownload(uri){
+  let url=uri;
+  if(!/[?&]key=/.test(url)) url += (url.includes('?')?'&':'?')+'key='+encodeURIComponent(S.apiKey);
+  if(!/[?&]alt=media/.test(url)) url += '&alt=media';
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok) throw new Error('download '+resp.status);
+    const blob=await resp.blob();
+    return { url: await blobToDataURL(blob), ephemeral:false };
+  }catch(e){
+    console.warn('Veo bytes fetch failed (likely CORS); using direct URL (expires)',e);
+    return { url, ephemeral:true };
+  }
 }
 
 // =====================================================================
@@ -870,7 +1137,12 @@ const MOVE_PHASES = [
 async function generateMove(meta){
   const N = Math.max(3, Math.min(6, meta.frames||5));
   const motion = meta.motion || 'Walking toward the camera';
-  const FW = 480, FH = 640;                 // uniform GIF frame size (3:4)
+  // Frame size derives from the output spec's aspect ratio, downscaled so the GIF stays light.
+  const spec = meta.spec || { width:480, height:640, fit:'cover', bg:'white' };
+  const ar = spec.width/spec.height, MAX=512;
+  let FW, FH;
+  if(ar>=1){ FW=MAX; FH=Math.round(MAX/ar); } else { FH=MAX; FW=Math.round(MAX*ar); }
+  const padBg = spec.bg==='white' ? '#ffffff' : '#000000';
   const base = buildPrompt({ ...meta, mode:'move' }); // on-model rules
 
   const frameSrcs = [];
@@ -898,7 +1170,7 @@ Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4
 
   document.getElementById('procStep').textContent = 'Assembling looping GIF…';
   const canvases = [];
-  for(const src of frameSrcs){ canvases.push(await normFrame(src, FW, FH)); }
+  for(const src of frameSrcs){ canvases.push(await normFrame(src, FW, FH, spec.fit, padBg)); }
   const delay = Math.max(120, Math.round(1200/N)); // ~1.2s total loop
   const blob = await framesToGif(canvases, delay);
   return await blobToDataURL(blob);
@@ -907,17 +1179,35 @@ Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4
 function loadImg(src){
   return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('Frame failed to load')); im.src=src; });
 }
-// center-crop (cover) each frame onto a uniform canvas so the GIF is consistent
-async function normFrame(src, FW, FH){
+// place a frame onto a uniform canvas (cover = fill+crop, contain = fit+pad)
+async function normFrame(src, FW, FH, fit='cover', bg='#000000'){
   const im = await loadImg(src);
   const c = document.createElement('canvas'); c.width=FW; c.height=FH;
-  const ctx = c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,FW,FH);
+  const ctx = c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,FW,FH);
   const ir = im.width/im.height, fr = FW/FH;
-  let sw, sh, sx, sy;
-  if(ir>fr){ sh=im.height; sw=sh*fr; sx=(im.width-sw)/2; sy=0; }
-  else     { sw=im.width;  sh=sw/fr; sx=0; sy=(im.height-sh)/2; }
-  ctx.drawImage(im, sx, sy, sw, sh, 0, 0, FW, FH);
+  let dw, dh, dx, dy;
+  if(fit==='contain'){ if(ir>fr){ dw=FW; dh=dw/ir; } else { dh=FH; dw=dh*ir; } }
+  else               { if(ir>fr){ dh=FH; dw=dh*ir; } else { dw=FW; dh=dw/ir; } }
+  dx=(FW-dw)/2; dy=(FH-dh)/2;
+  ctx.drawImage(im, dx, dy, dw, dh);   // cover overflow is auto-clipped to canvas
   return c;
+}
+// Finish a still at EXACT pixel dimensions + format (the customer-spec step).
+async function fitToSpec(src, spec){
+  try{
+    const im = await loadImg(src);
+    const W = spec.width, H = spec.height;
+    const c = document.createElement('canvas'); c.width=W; c.height=H;
+    const ctx = c.getContext('2d');
+    if(spec.format==='jpeg' || spec.bg==='white'){ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H); }
+    const ir = im.width/im.height, fr = W/H;
+    let dw, dh, dx, dy;
+    if(spec.fit==='cover'){ if(ir>fr){ dh=H; dw=dh*ir; } else { dw=W; dh=dw/ir; } }
+    else                  { if(ir>fr){ dw=W; dh=dw/ir; } else { dh=H; dw=dh*ir; } }
+    dx=(W-dw)/2; dy=(H-dh)/2;
+    ctx.drawImage(im, dx, dy, dw, dh);
+    return spec.format==='jpeg' ? c.toDataURL('image/jpeg', spec.quality||0.9) : c.toDataURL('image/png');
+  }catch(e){ console.warn('fitToSpec failed, returning original',e); return src; }
 }
 function blobToDataURL(blob){
   return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result); r.onerror=()=>rej(new Error('GIF encode failed')); r.readAsDataURL(blob); });
@@ -1034,7 +1324,7 @@ async function removeBg(b64){
 // EXPORT — filename rule, download, share, batch
 // =====================================================================
 function buildFilename(styleName, meta){
-  const ext = meta.mode==='move' ? 'gif' : 'png';
+  const ext = meta.mode==='move' ? (meta.engine==='veo'?'mp4':'gif') : (meta.spec && meta.spec.format==='jpeg' ? 'jpg' : 'png');
   const parts=[styleName, meta.category, meta.fabric, meta.fit].filter(Boolean).map(s=>String(s).toUpperCase());
   return parts.join(' - ').replace(/%/g,'PCT').replace(/[\\/:*?"<>|]/g,'') + '.' + ext;
 }
@@ -1042,19 +1332,24 @@ function dlImage(dataUrl, filename){
   const a=document.createElement('a'); a.href=dataUrl; a.download=filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-function downloadCurrent(){ if(S.current) dlImage(S.current.image, S.current.filename); }
-function downloadRender(id){ const r=findRender(id); if(r) dlImage(r.image, r.filename); }
+function dlSource(r){ return (r.kind==='video' && r.video) ? r.video : r.image; }
+function downloadCurrent(){ if(S.current) dlImage(dlSource(S.current), S.current.filename); }
+function downloadRender(id){ const r=findRender(id); if(r) dlImage(dlSource(r), r.filename); }
 
 async function shareCurrent(){ if(S.current) await shareRender(S.current); }
 async function shareRender(r){
   try{
+    const isVideo = r.kind==='video' && r.video;
     if(navigator.canShare){
-      const blob=await (await fetch(r.image)).blob();
-      const mime=r.meta&&r.meta.mode==='move'?'image/gif':'image/png';
+      const blob=await (await fetch(isVideo?r.video:r.image)).blob();
+      const mime = isVideo ? 'video/mp4'
+                 : r.meta&&r.meta.mode==='move' ? 'image/gif'
+                 : (r.meta&&r.meta.spec&&r.meta.spec.format==='jpeg') ? 'image/jpeg'
+                 : 'image/png';
       const file=new File([blob], r.filename, {type:mime});
-      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:`RD Style: ${r.styleName}`,text:`RD Style — ${r.styleName}`}); return; }
     }
-    if(navigator.share){ await navigator.share({title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
+    if(navigator.share){ await navigator.share({title:`RD Style: ${r.styleName}`,text:`RD Style — ${r.styleName}`}); return; }
     await navigator.clipboard.writeText(window.location.href);
     toast('Link copied (native sharing unavailable)');
   }catch(e){ if(e.name!=='AbortError'){ toast('Share failed','err'); } }
@@ -1062,7 +1357,7 @@ async function shareRender(r){
 function batchExport(){
   const list=filteredCatalog();
   if(!list.length){ toast('Nothing to export','err'); return; }
-  list.forEach((r,i)=> setTimeout(()=>dlImage(r.image, r.filename), i*600));
+  list.forEach((r,i)=> setTimeout(()=>dlImage(dlSource(r), r.filename), i*600));
   toast(`Exporting ${list.length} asset${list.length>1?'s':''}…`);
 }
 
@@ -1075,6 +1370,7 @@ function renderTray(){
   if(!S.session.length){ body.innerHTML='<div class="tray-empty">Studio history is empty. Generate your first asset to see it here.</div>'; return; }
   body.innerHTML=S.session.map(r=>`
     <div class="tray-card ${r.transparent?'transparent':''} ${S.current&&S.current.id===r.id?'active':''}" onclick="selectRender('${r.id}')">
+      ${r.kind==='video'?'<div class="play-badge"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>MP4</div>':''}
       <img src="${r.image}" alt="${esc(r.styleName)}"/>
       <div class="tray-ov">
         <div class="nm">${esc(r.styleName)}</div>
@@ -1097,7 +1393,9 @@ function loadIntoForm(r){
   S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   if(r.meta.motion) document.getElementById('moveMotion').value=r.meta.motion;
+  if(r.meta.engine) setMoveEngine(r.meta.engine);
   if(r.meta.frames) document.getElementById('moveFrames').value=String(r.meta.frames);
+  if(r.meta.spec){ S.spec={ ...r.meta.spec }; markCustom(); refreshSpecUI(); }
   if(r.meta.model){ document.getElementById('mGender').value=r.meta.model.gender||'Male'; document.getElementById('mAge').value=r.meta.model.age||'25-30'; document.getElementById('mEthnicity').value=r.meta.model.ethnicity||''; document.getElementById('mSkin').value=r.meta.model.skin||''; document.getElementById('mHair').value=r.meta.model.hair||''; }
 }
 function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); switchTab('studio'); generate(); }
@@ -1161,6 +1459,7 @@ function renderCatalog(){
   wrap.innerHTML=`<div class="cat-grid">${list.map(r=>`
     <div class="cat-card">
       <div class="cat-img ${r.transparent?'transparent':''}">
+        ${r.kind==='video'?'<div class="play-badge"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>MP4</div>':''}
         <img src="${r.image}" alt="${esc(r.styleName)}"/>
         <div class="cat-acts">
           <button class="cact dl full" onclick="downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
@@ -1172,7 +1471,7 @@ function renderCatalog(){
       </div>
       <div class="cat-info">
         <div class="row"><span class="nm">${esc(r.styleName)}</span><span class="dt">${new Date(r.timestamp).toLocaleDateString()}</span></div>
-        <div class="sub">${esc(r.meta.category)} · ${esc(r.meta.fabric)} · ${r.meta.mode==='move'?'Move · Loop':(r.transparent?'Transparent':'On Model')}</div>
+        <div class="sub">${esc(r.meta.category)} · ${r.meta.mode==='move'?(r.kind==='video'?'Move · MP4':'Move · GIF'):(r.transparent?'Transparent':'On Model')}${r.meta.spec?` · ${r.meta.spec.width}×${r.meta.spec.height}`:''}</div>
       </div>
     </div>`).join('')}</div>`;
 }
