@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RD STYLE AI STUDIO — V1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--panel:#0d0d0d;--stage:#070707;--ink:#f5f5f5;--muted:#8a8a8a;
+  --line:rgba(255,255,255,0.10);--line-soft:rgba(255,255,255,0.05);--fill:rgba(255,255,255,0.05);
+  --accent:#fff;--accent-ink:#000;--danger:#ef4444;--good:#22c55e;--info:#3b82f6;
+  --font-sans:'Inter',sans-serif;--font-display:'Playfair Display',serif;--font-mono:'JetBrains Mono',monospace;
+  /* checkerboard for transparent previews */
+  --checker:linear-gradient(45deg,#161616 25%,transparent 25%,transparent 75%,#161616 75%,#161616),linear-gradient(45deg,#161616 25%,transparent 25%,transparent 75%,#161616 75%,#161616);
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:inherit;background:none;border:none;color:inherit}
+input,textarea,select{font-family:var(--font-sans);color:var(--ink)}
+a{color:var(--info)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#111}
+::-webkit-scrollbar-thumb{background:#333;border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:#444}
+.hidden{display:none!important}
+.font-serif{font-family:var(--font-display)}
+.mono{font-family:var(--font-mono)}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:50;background:rgba(10,10,10,0.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-box{background:#fff;padding:7px;border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(255,255,255,0.06)}
+.logo-box svg{width:20px;height:20px;stroke:#000;fill:none;stroke-width:2}
+.logo-title{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;line-height:1}
+.logo-sub{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.22em;color:var(--muted);margin-top:3px}
+.version-badge{background:#fff;color:#000;font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:3px;letter-spacing:0.02em;margin-left:6px}
+.nav{display:flex;gap:2px;background:var(--fill);padding:4px;border-radius:999px;border:1px solid var(--line)}
+.navbtn{padding:8px 22px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--muted);transition:all .2s;text-transform:uppercase}
+.navbtn.active{background:#fff;color:#000}
+.navbtn:not(.active):hover{color:#fff}
+.header-actions{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.hbtn{font-family:var(--font-mono);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);transition:all .2s;display:flex;align-items:center;gap:6px}
+.hbtn:hover{color:#fff}
+.hbtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.key-dot{width:6px;height:6px;border-radius:50%;background:var(--danger)}
+.key-dot.ok{background:var(--good)}
+
+/* UPLOAD / WELCOME SCREEN */
+.welcome{max-width:680px;width:100%;margin:0 auto;padding:72px 24px 40px;text-align:center}
+.welcome-hero{font-family:var(--font-display);font-size:clamp(40px,7vw,84px);font-weight:900;letter-spacing:0.02em;line-height:0.95;text-transform:uppercase;margin-bottom:18px}
+.welcome-sub{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:var(--muted);margin-bottom:40px}
+.start-btn{background:#fff;color:#000;font-weight:700;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;padding:16px 40px;border-radius:12px;transition:all .2s}
+.start-btn:hover{background:#e5e5e5}
+.welcome-note{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:22px;opacity:.7}
+
+/* APP LAYOUT */
+.app{display:none;flex:1;flex-direction:column;height:calc(100vh - 60px);overflow:hidden}
+.app.active{display:flex}
+.studio-wrap{flex:1;display:flex;flex-direction:row;overflow:hidden}
+@media(max-width:900px){.studio-wrap{flex-direction:column}}
+
+/* SIDEBAR */
+.sidebar{width:400px;flex-shrink:0;border-right:1px solid var(--line);padding:28px;overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;gap:30px}
+@media(max-width:900px){.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line)}}
+.field-label{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:12px}
+.sub-label{font-size:10px;color:var(--muted);margin-bottom:6px;display:block}
+.text-input,.textarea,select.select{width:100%;background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-size:14px;transition:border .2s;outline:none}
+.text-input::placeholder,.textarea::placeholder{color:#555}
+.text-input:focus,.textarea:focus,select.select:focus{border-color:rgba(255,255,255,0.3)}
+.textarea{min-height:100px;resize:vertical;line-height:1.5}
+select.select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+select.select option{background:#0d0d0d}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{padding:13px 16px;border-radius:12px;font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--fill);color:var(--muted);transition:all .2s;display:flex;align-items:center;justify-content:space-between;text-align:left}
+.choice:hover{border-color:rgba(255,255,255,0.3)}
+.choice.active{background:#fff;color:#000;border-color:#fff}
+.choice svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:3}
+.pill-row{display:flex;gap:8px}
+.pill{flex:1;padding:9px 0;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:10px;border:1px solid var(--line-soft);background:transparent;color:var(--muted);transition:all .2s}
+.pill:hover{color:#ddd}
+.pill.active{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.4);color:#fff}
+.upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:26px;border:1px solid var(--line);border-radius:12px;background:var(--fill);color:var(--muted);transition:all .2s;width:100%}
+.upload-zone:hover{border-color:rgba(255,255,255,0.3);color:#fff}
+.upload-zone svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.upload-zone span{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase}
+.ref-preview{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);aspect-ratio:16/10}
+.ref-preview img{width:100%;height:100%;object-fit:cover}
+.ref-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--danger);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.ref-x:hover{transform:scale(1.1)}
+.ref-x svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5}
+.note-box{margin-top:12px;padding:12px;background:var(--fill);border:1px solid var(--line);border-radius:12px;font-size:11px;line-height:1.5;color:var(--muted)}
+.note-box b{color:#fff}
+.note-box a,.note-box .linkbtn{color:#fff;text-decoration:underline;cursor:pointer}
+.generate-btn{width:100%;background:#fff;color:#000;padding:16px;border-radius:12px;font-weight:700;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.generate-btn:hover:not(:disabled){background:#e5e5e5}
+.generate-btn:disabled{opacity:.5;cursor:not-allowed}
+.generate-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* STAGE */
+.stage-col{flex:1;display:flex;flex-direction:column;background:var(--stage);overflow:hidden}
+.stage{flex:1;padding:32px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.glow{position:absolute;width:500px;height:500px;background:rgba(255,255,255,0.05);filter:blur(120px);border-radius:50%;pointer-events:none}
+.glow.tr{top:-260px;right:-260px}.glow.bl{bottom:-260px;left:-260px}
+.canvas-frame{width:100%;max-width:560px;aspect-ratio:3/4;position:relative}
+.placeholder{position:absolute;inset:0;border:2px dashed var(--line);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#555;text-align:center;padding:24px}
+.placeholder .ic{padding:22px;background:var(--fill);border-radius:50%}
+.placeholder svg{width:46px;height:46px;stroke:currentColor;fill:none;stroke-width:1.5;opacity:.3}
+.placeholder p{font-size:11px;letter-spacing:0.25em;text-transform:uppercase}
+.proc{position:absolute;inset:0;background:var(--fill);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+.proc-ring{width:90px;height:90px;border:4px solid var(--line);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+.proc p{font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;text-align:center}
+.proc .step{color:var(--muted);font-weight:400;font-size:10px;letter-spacing:0.1em;min-height:14px}
+.result{position:absolute;inset:0;border-radius:18px;overflow:hidden}
+.result.transparent{background-color:#0a0a0a;background-image:var(--checker);background-size:22px 22px;background-position:0 0,11px 11px}
+.result img{width:100%;height:100%;box-shadow:0 30px 60px rgba(0,0,0,0.5);border-radius:18px}
+.result.transparent img{object-fit:contain}
+.result:not(.transparent) img{object-fit:cover}
+.meta-overlay{position:absolute;top:22px;left:22px;display:flex;flex-direction:column;gap:8px;max-width:75%}
+.meta-name{background:rgba(0,0,0,0.45);backdrop-filter:blur(10px);padding:11px 13px;border:1px solid var(--line);border-radius:12px}
+.meta-name .k{font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.4);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:3px}
+.meta-name .v{font-family:var(--font-display);font-size:14px;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{padding:5px 12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border:1px solid var(--line)}
+.tag.dim{color:var(--muted)}
+.stage-actions{position:absolute;bottom:22px;left:22px;right:22px;display:flex;gap:12px}
+.act-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;transition:all .2s}
+.act-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.act-primary{background:#fff;color:#000}.act-primary:hover{background:#e5e5e5}
+.act-ghost{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);border:1px solid var(--line);color:#fff}.act-ghost:hover{background:rgba(255,255,255,0.2)}
+
+/* TRAY */
+.tray{height:200px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column}
+.tray-head{padding:11px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--fill)}
+.tray-head h2{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted)}
+.tray-head .stat{font-family:var(--font-mono);font-size:9px;color:#555;display:flex;gap:12px;align-items:center}
+.tray-body{flex:1;display:flex;gap:14px;padding:16px;overflow-x:auto}
+.tray-empty{display:flex;align-items:center;justify-content:center;width:100%;color:#444;font-style:italic;font-size:12px;letter-spacing:0.12em}
+.tray-card{position:relative;height:100%;aspect-ratio:3/4;flex-shrink:0;border-radius:10px;overflow:hidden;border:2px solid var(--line-soft);cursor:pointer;transition:all .2s}
+.tray-card:hover{border-color:rgba(255,255,255,0.2)}
+.tray-card.active{border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,0.1)}
+.tray-card.transparent{background-color:#0a0a0a;background-image:var(--checker);background-size:11px 11px;background-position:0 0,5.5px 5.5px}
+.tray-card img{width:100%;height:100%}
+.tray-card.transparent img{object-fit:contain}
+.tray-card:not(.transparent) img{object-fit:cover;opacity:.85}
+.tray-card:hover img{opacity:1}
+.tray-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85),transparent 60%);opacity:0;transition:opacity .2s;display:flex;flex-direction:column;justify-content:flex-end;padding:8px}
+.tray-card:hover .tray-ov{opacity:1}
+.tray-ov .nm{font-size:8px;font-weight:700;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+.mini-acts{display:flex;gap:5px}
+.mini-btn{padding:5px;background:rgba(255,255,255,0.12);border-radius:6px;transition:all .15s}
+.mini-btn:hover{background:#fff}
+.mini-btn:hover svg{stroke:#000}
+.mini-btn svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;display:block}
+
+/* CATALOG */
+.catalog{display:none;flex:1;overflow-y:auto;padding:40px}
+.catalog.active{display:block}
+.cat-inner{max-width:1320px;margin:0 auto}
+.cat-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;flex-wrap:wrap;gap:16px}
+.cat-head h2{font-family:var(--font-display);font-size:30px;font-weight:700;margin-bottom:4px}
+.cat-head p{color:var(--muted);font-size:13px}
+.cat-total{text-align:right}
+.cat-total .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cat-total .num{font-size:26px;font-weight:300}
+.filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:30px;align-items:center}
+.filters .text-input{flex:1;min-width:200px}
+.filters select.select{width:auto;min-width:150px}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:28px;padding-bottom:60px}
+.cat-card{display:flex;flex-direction:column;gap:12px}
+.cat-img{aspect-ratio:3/4;border-radius:16px;overflow:hidden;position:relative;border:1px solid var(--line-soft);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.cat-img.transparent{background-color:#0a0a0a;background-image:var(--checker);background-size:16px 16px;background-position:0 0,8px 8px}
+.cat-img img{width:100%;height:100%;transition:transform .6s}
+.cat-img.transparent img{object-fit:contain}
+.cat-img:not(.transparent) img{object-fit:cover}
+.cat-card:hover .cat-img img{transform:scale(1.04)}
+.cat-acts{position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;opacity:0;transform:translateY(8px);transition:all .25s}
+.cat-card:hover .cat-acts{opacity:1;transform:none}
+.cact{padding:9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:5px;backdrop-filter:blur(10px)}
+.cact svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.cact.full{flex:1}
+.cact.dl{background:#fff;color:#000}
+.cact.gh{background:rgba(255,255,255,0.2);border:1px solid var(--line);color:#fff}
+.cact.del{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.3);color:var(--danger)}
+.cat-info .row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:3px}
+.cat-info .nm{font-size:13px;font-weight:700;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-info .dt{font-size:9px;font-weight:700;color:#555;white-space:nowrap}
+.cat-info .sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.02em;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-empty{padding:90px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;border:2px dashed var(--line-soft);border-radius:24px}
+.cat-empty svg{width:54px;height:54px;stroke:rgba(255,255,255,0.12);fill:none;stroke-width:1.5}
+.cat-empty p{color:var(--muted);font-size:11px;letter-spacing:0.18em;text-transform:uppercase}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--line-soft);background:var(--bg);padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;color:#555;flex-shrink:0;text-transform:uppercase}
+.footer .left{display:flex;gap:16px}
+.footer .dot{display:inline-flex;align-items:center;gap:6px}
+.footer .dot i{width:5px;height:5px;border-radius:50%}
+.dot.g i{background:var(--good)}.dot.b i{background:var(--info)}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px}
+.modal-box{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:460px;width:100%;padding:30px;position:relative}
+.modal-title{font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:20px}
+.modal-close{position:absolute;top:22px;right:22px;color:var(--muted)}
+.modal-close:hover{color:#fff}
+.modal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.modal-field{margin-bottom:18px}
+.modal-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.key-row{position:relative}
+.key-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:6px;color:var(--muted)}
+.key-toggle:hover{color:#fff}
+.key-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.modal-note{font-family:var(--font-mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#666;margin-top:7px}
+.modal-info{margin-top:7px;padding:8px 10px;border-radius:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;line-height:1.5}
+.modal-info.good{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#86efac}
+.modal-info.warn{background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);color:#fde68a}
+.modal-check{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.modal-check input{accent-color:#fff;width:15px;height:15px;cursor:pointer}
+.modal-btns{display:flex;gap:10px;margin-top:24px}
+.btn-secondary,.btn-primary{flex:1;padding:13px;border-radius:11px;font-weight:700;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;transition:all .2s}
+.btn-secondary{background:var(--fill);border:1px solid var(--line);color:#ddd}.btn-secondary:hover{border-color:rgba(255,255,255,0.3)}
+.btn-primary{background:#fff;color:#000}.btn-primary:hover{background:#e5e5e5}
+.modal-foot{font-family:var(--font-mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:#444;text-align:center;margin-top:16px}
+.rate-box{background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:22px;text-align:center;margin-bottom:16px}
+.rate-time{font-family:var(--font-mono);font-size:42px;font-weight:500}
+.rate-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.rate-note{font-size:11px;line-height:1.6;color:var(--muted);margin-bottom:16px}
+.rate-skip{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#fff;text-decoration:underline;display:block;margin:0 auto}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none}
+.toast{background:#161616;border:1px solid var(--line);border-radius:12px;padding:12px 20px;font-size:12px;letter-spacing:0.04em;box-shadow:0 12px 30px rgba(0,0,0,0.5);animation:toastin .25s ease;display:flex;align-items:center;gap:10px}
+.toast.err{border-color:rgba(239,68,68,0.4)}
+.toast .i{width:7px;height:7px;border-radius:50%;background:var(--good);flex-shrink:0}
+.toast.err .i{background:var(--danger)}
+@keyframes toastin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+    <div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.0</span></div>
+      <div class="logo-sub">Menswear Render Engine</div>
+    </div>
+  </div>
+  <nav class="nav" id="navBar" style="display:none">
+    <button class="navbtn active" data-tab="studio" onclick="switchTab('studio')">Studio</button>
+    <button class="navbtn" data-tab="catalog" onclick="switchTab('catalog')">Catalog (<span id="catCount">0</span>)</button>
+  </nav>
+  <div class="header-actions">
+    <button class="hbtn" onclick="showSettings()"><span class="key-dot" id="keyDot"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+  </div>
+</header>
+
+<!-- WELCOME -->
+<div class="welcome" id="welcome">
+  <h1 class="welcome-hero">Render the<br>Collection</h1>
+  <p class="welcome-sub">3D Menswear Catalog · Ghost-Mannequin & On-Model</p>
+  <button class="start-btn" onclick="enterApp()">Enter Studio</button>
+  <p class="welcome-note">Bring your own Gemini key · Everything stays in your browser</p>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="studio-wrap" id="studioTab">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <section>
+        <label class="field-label">Style Name &amp; Color</label>
+        <input type="text" id="styleName" class="text-input" placeholder="e.g. Sartorial Trench — Sage Khaki"/>
+      </section>
+
+      <section>
+        <label class="field-label">Source Reference</label>
+        <div id="refSlot">
+          <button class="upload-zone" onclick="document.getElementById('refFile').click()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Add Reference Image</span>
+          </button>
+          <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>
+        </div>
+      </section>
+
+      <section>
+        <label class="field-label">Render Mode</label>
+        <div class="grid2" id="modeGroup">
+          <button class="choice active" data-mode="render" onclick="setMode('render')">Render<svg class="check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="choice" data-mode="model" onclick="setMode('model')">On Model<svg class="check hidden" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+        </div>
+        <div class="note-box" id="renderNote">
+          <b>Ghost Mannequin.</b> Renders on flat white, then auto-extracts a true transparent PNG (clean alpha channel) for line sheets and lookbooks.
+        </div>
+      </section>
+
+      <section id="modelConfig" class="hidden">
+        <label class="field-label">Model Configuration</label>
+        <div class="grid2" style="gap:14px">
+          <div>
+            <label class="sub-label">Sex</label>
+            <select class="select" id="mGender"><option>Male</option><option>Female</option><option>Non-binary</option></select>
+          </div>
+          <div>
+            <label class="sub-label">Age Range</label>
+            <select class="select" id="mAge"><option>18-24</option><option selected>25-30</option><option>31-40</option><option>41-55</option><option>55+</option></select>
+          </div>
+          <div>
+            <label class="sub-label">Ethnicity</label>
+            <input type="text" class="text-input" id="mEthnicity" placeholder="e.g. East Asian"/>
+          </div>
+          <div>
+            <label class="sub-label">Skin Tone</label>
+            <input type="text" class="text-input" id="mSkin" placeholder="e.g. Warm Olive"/>
+          </div>
+          <div style="grid-column:span 2">
+            <label class="sub-label">Hair Color</label>
+            <input type="text" class="text-input" id="mHair" placeholder="e.g. Chestnut Brown"/>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <label class="field-label">Garment Category</label>
+        <div class="grid2" id="catGroup"></div>
+      </section>
+
+      <section>
+        <label class="field-label">Material &amp; Style</label>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <label class="sub-label">Fabric Texture</label>
+            <select class="select" id="fabric">
+              <option>Premium Italian Wool</option><option>Egyptian Cotton</option><option>Cotton Blend</option>
+              <option>Jersey</option><option>Woven Cotton</option><option>Distressed Leather</option>
+              <option>Raw Japanese Denim</option><option>Cashmere Blend</option><option>Technical Nylon</option>
+              <option>Corduroy</option><option>Brushed Flannel</option>
+            </select>
+          </div>
+          <div>
+            <label class="sub-label">Fit Profile</label>
+            <div class="pill-row" id="fitGroup"></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <label class="field-label">Additional Art Direction</label>
+        <textarea id="notes" class="textarea" placeholder="e.g. Include subtle horn buttons, show interior lining texture, contrast topstitching…"></textarea>
+      </section>
+
+      <button class="generate-btn" id="genBtn" onclick="generate()">
+        <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="genLabel">Create 3D Render</span>
+      </button>
+    </aside>
+
+    <!-- STAGE -->
+    <div class="stage-col">
+      <div class="stage">
+        <div class="glow tr"></div><div class="glow bl"></div>
+        <div class="canvas-frame">
+          <div class="placeholder" id="placeholder">
+            <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+            <p id="phText">Awaiting Input Parameters</p>
+          </div>
+          <div class="proc hidden" id="proc">
+            <div class="proc-ring"></div>
+            <div style="text-align:center;display:flex;flex-direction:column;gap:8px">
+              <p>Generating High-Res Asset</p>
+              <p class="step" id="procStep">Simulating fabric textures…</p>
+            </div>
+          </div>
+          <div class="result hidden" id="result">
+            <img id="resultImg" alt="Render preview"/>
+            <div class="meta-overlay" id="metaOverlay"></div>
+            <div class="stage-actions">
+              <button class="act-btn act-primary" onclick="downloadCurrent()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
+              <button class="act-btn act-ghost" onclick="shareCurrent()"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAY -->
+      <div class="tray">
+        <div class="tray-head">
+          <h2>Studio Gallery · Recent Assets</h2>
+          <div class="stat"><span id="trayCount">0 OBJECTS</span><i style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)"></i><span>FRONTAL · 3:4</span></div>
+        </div>
+        <div class="tray-body" id="trayBody">
+          <div class="tray-empty">Studio history is empty. Generate your first asset to see it here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOG -->
+  <div class="catalog" id="catalogTab">
+    <div class="cat-inner">
+      <div class="cat-head">
+        <div>
+          <h2>Production Catalog</h2>
+          <p>Your full menswear asset archive, stored locally in this browser.</p>
+        </div>
+        <div class="cat-total"><div class="lbl">Total Assets</div><div class="num" id="catTotalNum">0</div></div>
+      </div>
+      <div class="filters">
+        <input type="text" id="filterText" class="text-input" placeholder="Search by style name…" oninput="renderCatalog()"/>
+        <select class="select" id="filterCat" onchange="renderCatalog()"><option value="">All Categories</option></select>
+        <select class="select" id="filterMode" onchange="renderCatalog()"><option value="">All Modes</option><option value="render">Ghost Mannequin</option><option value="model">On Model</option></select>
+        <button class="btn-secondary" style="flex:0 0 auto;padding:13px 18px" onclick="batchExport()">Batch Export</button>
+      </div>
+      <div id="catGridWrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="left">
+    <span class="dot g"><i></i>Engine Active</span>
+    <span class="dot b"><i></i>Gemini 2.5 Flash Image</span>
+  </div>
+  <div>© 2026 RD Style AI Studio · Vault Synced Locally</div>
+</footer>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-box">
+    <h2 class="modal-title">Settings</h2>
+    <button class="modal-close" onclick="hideSettings()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-field">
+      <label class="modal-label">Gemini API Key <span style="color:#fff;font-size:8px">(Image Rendering · Required)</span></label>
+      <div class="key-row">
+        <input type="password" id="geminiKeyInput" class="text-input" placeholder="AIza..." style="padding-right:42px"/>
+        <button class="key-toggle" onclick="toggleKey('geminiKeyInput')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+      <p class="modal-note">Get your key at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a></p>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Anthropic API Key <span style="color:#fff;font-size:8px">(Claude Art-Direction · Optional)</span></label>
+      <div class="key-row">
+        <input type="password" id="anthropicKeyInput" class="text-input" placeholder="sk-ant-..." style="padding-right:42px"/>
+        <button class="key-toggle" onclick="toggleKey('anthropicKeyInput')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+      <p class="modal-note">Optional. When set, Claude rewrites your art direction into a precise render prompt.</p>
+      <div id="claudeActive" class="modal-info good hidden">✓ Claude art-direction active</div>
+      <div id="claudeInactive" class="modal-info warn">Without this key, the built-in prompt builder is used — still works.</div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-check"><input type="checkbox" id="showTimerCheck"/>Show rate-limit cooling timer</label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="hideSettings()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+    <p class="modal-foot">Keys stored locally in your browser only · never uploaded</p>
+  </div>
+</div>
+
+<!-- RATE LIMIT MODAL -->
+<div class="modal-overlay hidden" id="rateModal">
+  <div class="modal-box" style="max-width:420px">
+    <h2 class="modal-title">Cooling Period</h2>
+    <p class="modal-note" style="margin-bottom:16px">Temporary usage limit reached</p>
+    <div class="rate-box">
+      <div class="rate-time" id="rateTime">2:00</div>
+      <div class="rate-lbl">Remaining cooldown</div>
+    </div>
+    <p class="rate-note">Your Gemini key hit a rate limit. Wait for the cooldown, or check your quota in Google AI Studio.</p>
+    <div class="modal-check" style="margin-bottom:14px"><input type="checkbox" id="hideTimerCheck" onchange="toggleTimerPref(this)"/><label for="hideTimerCheck">Don't show this again</label></div>
+    <button class="rate-skip" onclick="hideRate()">Skip and close →</button>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+"use strict";
+// =====================================================================
+// RD STYLE AI STUDIO — single-file static app
+// Conventions mirror SweaterVision: bring-your-own-key, REST Gemini,
+// flat-white render -> client-side flood-fill transparency, 429 backoff.
+// Persistence: IndexedDB catalog vault + localStorage for keys/prefs.
+// =====================================================================
+
+const CATEGORIES = ['Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
+const FITS = ['Slim','Relaxed','Tailored','Oversized'];
+const GEMINI_MODEL = 'gemini-2.5-flash-image';
+
+const S = {
+  apiKey:'', anthropicKey:'', showTimer:true,
+  mode:'render', category:'Outerwear', fit:'Slim',
+  refImage:null,
+  current:null,          // current preview render object
+  session:[],            // in-session renders (newest first)
+  catalog:[],            // persisted renders (newest first)
+  processing:false,
+};
+
+// ---------- INIT ----------
+function init(){
+  S.apiKey = localStorage.getItem('rd_gemini_key') || '';
+  S.anthropicKey = localStorage.getItem('rd_anthropic_key') || '';
+  S.showTimer = localStorage.getItem('rd_show_timer') !== 'false';
+  buildCategoryButtons();
+  buildFitButtons();
+  buildFilterCategories();
+  updateKeyDot();
+  openDB().then(loadCatalog);
+}
+
+function buildCategoryButtons(){
+  const wrap = document.getElementById('catGroup');
+  wrap.innerHTML = CATEGORIES.map(c=>`
+    <button class="choice ${c===S.category?'active':''}" data-cat="${c}" onclick="setCategory('${c}')">
+      ${c}<svg class="check ${c===S.category?'':'hidden'}" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>`).join('');
+}
+function buildFitButtons(){
+  document.getElementById('fitGroup').innerHTML = FITS.map(f=>`
+    <button class="pill ${f===S.fit?'active':''}" data-fit="${f}" onclick="setFit('${f}')">${f}</button>`).join('');
+}
+function buildFilterCategories(){
+  const sel = document.getElementById('filterCat');
+  sel.innerHTML = '<option value="">All Categories</option>' + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function enterApp(){
+  if(!S.apiKey){ showSettings(); toast('Add your Gemini API key to begin','err'); return; }
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('navBar').style.display='flex';
+}
+
+// ---------- TABS ----------
+function switchTab(tab){
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.getElementById('studioTab').style.display = tab==='studio'?'flex':'none';
+  document.getElementById('catalogTab').classList.toggle('active',tab==='catalog');
+  if(tab==='catalog') renderCatalog();
+}
+
+// ---------- CONTROL SETTERS ----------
+function setMode(m){
+  S.mode=m;
+  document.querySelectorAll('#modeGroup .choice').forEach(b=>{
+    const on=b.dataset.mode===m; b.classList.toggle('active',on);
+    b.querySelector('.check').classList.toggle('hidden',!on);
+  });
+  document.getElementById('modelConfig').classList.toggle('hidden',m!=='model');
+  document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
+}
+function setCategory(c){ S.category=c; buildCategoryButtons(); }
+function setFit(f){ S.fit=f; buildFitButtons(); }
+
+function handleRef(e){
+  const file = e.target.files?.[0]; if(!file) return;
+  if(!document.getElementById('styleName').value){
+    document.getElementById('styleName').value = file.name.split('.').slice(0,-1).join('.');
+  }
+  const reader = new FileReader();
+  reader.onloadend = ()=>{ S.refImage = reader.result; showRefPreview(); };
+  reader.readAsDataURL(file);
+}
+function showRefPreview(){
+  document.getElementById('refSlot').innerHTML = `
+    <div class="ref-preview">
+      <img src="${S.refImage}" alt="Reference"/>
+      <button class="ref-x" onclick="clearRef()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>`;
+}
+function clearRef(){
+  S.refImage=null;
+  document.getElementById('refSlot').innerHTML = `
+    <button class="upload-zone" onclick="document.getElementById('refFile').click()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Add Reference Image</span>
+    </button>
+    <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>`;
+}
+
+// =====================================================================
+// PROMPT BUILDERS  (render rules ported from SweaterVision)
+// =====================================================================
+function buildPrompt(meta){
+  const isRender = meta.mode==='render';
+  const styleLine = meta.styleName || 'Unnamed garment';
+
+  const bgRule = isRender
+    ? "GHOST MANNEQUIN BACKGROUND: CRITICAL — the garment MUST float on a 100% PURE FLAT SOLID WHITE background, hex #FFFFFF. NOT off-white, NOT light gray, NOT cream. Exact RGB (255,255,255). ZERO shadows of any kind — no drop shadows, no floor shadows, no ambient occlusion, no vignette, no gradient. The background must be a single uniform flat #FFFFFF value so automated background removal can extract the garment cleanly. Any deviation from pure white will cause extraction failure."
+    : "ON-MODEL BACKGROUND: A clean, minimal, professional editorial studio backdrop in a soft neutral tone. Even, high-key lighting. No clutter, no props, no text.";
+
+  const styleRule = isRender
+    ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
+    : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}. Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
+
+  const rules = isRender ? [
+    bgRule,
+    "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no plastic cylinder, no torso form outline, no shoulder supports, no base, no clips, no rods. Only the garment fabric floating in 3D space. The neck opening must be wide, fully open and hollow, showing only the inside back collar.",
+    "FORCE PERFECT FRONT-FACING CAMERA ANGLE: perfectly flat, straight, level, direct front view, centered and perpendicular to camera. Never three-quarter, profile, back, skewed or tilted. Symmetry mandatory.",
+    "ABSOLUTELY NO HANGERS OR TAGS: remove any hangers, hooks, wires, price tags, barcode tags, sizing tags, cords, and apparel labels (internal or external).",
+    "NO SHADOWS AT ALL: no flooring, ambient shadows, drop shadows or shadow halos. Flat, pure, sterile solid white (#FFFFFF) background.",
+    styleRule,
+    "NO MODEL OR HUMAN PARTS: no human faces, skin, arms, legs, models or mannequin heads. The neck opening shows only the hollow interior fabric.",
+    "DIMENSIONS: strictly 3:4 portrait (1200×1600). Garment beautifully centered with ~15% margin from all borders so nothing clips.",
+  ] : [
+    bgRule,
+    styleRule,
+    "FRAMING: 3:4 portrait crop, garment is the clear focal point, well-lit, no harsh shadows obscuring fabric detail.",
+    "NO TAGS OR ARTIFACTS: remove price tags, barcode tags, sizing tags and brand labels from the garment.",
+    "PHOTOREALISM: high-end catalog quality, true-to-life proportions, no extra limbs or distortions.",
+  ];
+
+  const refLine = meta.hasRef ? "REFERENCE IMAGE: the attached image is the design/silhouette reference — match its construction, pattern, drape and color precisely." : "";
+
+  return `AI FASHION CATALOG ENGINE — produce a premium menswear render.
+STYLE NAME & COLOR: "${styleLine}"
+GARMENT CATEGORY: ${meta.category}
+PRIMARY FABRIC: ${meta.fabric}   |   FIT: ${meta.fit}
+ART DIRECTION: ${meta.notes || 'Follow the reference and category conventions closely.'}
+${refLine}
+
+CRITICAL RULES (ABSOLUTE COMPLIANCE — NO EXCEPTIONS):
+${rules.map((r,i)=>`${i+1}. ${r}`).join('\n')}
+TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: match the colorway named in the style. Luxury catalog realism throughout.`;
+}
+
+// Optional: rewrite art direction into a tighter prompt via Claude
+async function buildClaudePrompt(localPrompt, meta){
+  const system = `You are an expert fashion AI prompt engineer for menswear e-commerce renders. Rewrite the brief into ONE dense paragraph (max 160 words, no bullets, no line breaks) optimized for Google Gemini image generation. Preserve every hard rule (ghost mannequin vs on-model, pure #FFFFFF background for ghost mannequin, front-facing, 3:4, no tags/hangers, fabric and color fidelity). Be specific about fabric texture and the named colorway.`;
+  const user = `Garment: ${meta.category}; Fabric: ${meta.fabric}; Fit: ${meta.fit}; Mode: ${meta.mode==='render'?'ghost mannequin transparent product shot':'on-model editorial'}; Style/color: ${meta.styleName}; Art direction: ${meta.notes||'(none)'}\n\nBase prompt to tighten:\n${localPrompt}`;
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':S.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system,messages:[{role:'user',content:user}]})
+  });
+  if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(`Claude ${resp.status}: ${e?.error?.message||resp.statusText}`); }
+  const data = await resp.json();
+  const text = data.content?.[0]?.text?.trim();
+  if(!text) throw new Error('Claude returned empty');
+  return text;
+}
+
+// =====================================================================
+// GEMINI CALL (REST, with 429 backoff)
+// =====================================================================
+async function callGemini(prompt, meta, attempt=0){
+  const parts = [{ text: prompt }];
+  if(meta.hasRef && S.refImage){
+    const mime = S.refImage.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
+    parts.push({ inline_data:{ data:S.refImage.split(',')[1], mime_type:mime } });
+  }
+  const delays = [2000,4000,8000];
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${S.apiKey}`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ contents:{ parts }, generationConfig:{ responseModalities:['IMAGE','TEXT'] } })
+  });
+  if(resp.status===429){
+    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1); }
+    throw new Error('429: RESOURCE_EXHAUSTED — quota limit reached.');
+  }
+  if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Gemini error ${resp.status}`); }
+  const data = await resp.json();
+  const cand = data.candidates?.[0];
+  if(!cand) throw new Error('AI returned no candidates (possibly safety filtered).');
+  let txt='';
+  for(const part of cand.content?.parts||[]){
+    if(part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+    if(part.text) txt += part.text;
+  }
+  if(txt) throw new Error(`AI returned text instead of an image: ${txt.slice(0,120)}…`);
+  throw new Error(`No image returned. Finish reason: ${cand.finishReason||'unknown'}`);
+}
+
+// =====================================================================
+// GENERATE
+// =====================================================================
+const STEPS = ["Analyzing brief…","Interpreting style selection…","Building 3D form…","Rendering studio shot…","Refining textures & lighting…","Removing tags & labels…","Finishing up…"];
+
+async function generate(){
+  if(!S.apiKey){ showSettings(); toast('Add your Gemini API key first','err'); return; }
+  const styleName = document.getElementById('styleName').value.trim();
+  if(!styleName){ toast('Enter a style name & color','err'); return; }
+
+  const meta = {
+    styleName,
+    category: S.category,
+    fabric: document.getElementById('fabric').value,
+    fit: S.fit,
+    mode: S.mode,
+    notes: document.getElementById('notes').value.trim(),
+    hasRef: !!S.refImage,
+    model: {
+      gender: document.getElementById('mGender').value,
+      age: document.getElementById('mAge').value,
+      ethnicity: document.getElementById('mEthnicity').value.trim(),
+      skin: document.getElementById('mSkin').value.trim(),
+      hair: document.getElementById('mHair').value.trim(),
+    }
+  };
+
+  setProcessing(true);
+  let step=0; document.getElementById('procStep').textContent=STEPS[0];
+  const iv=setInterval(()=>{ if(step<STEPS.length-1) document.getElementById('procStep').textContent=STEPS[++step]; },2200);
+
+  try{
+    let prompt = buildPrompt(meta);
+    if(S.anthropicKey){
+      try{ document.getElementById('procStep').textContent='Tightening prompt with Claude…'; prompt = await buildClaudePrompt(prompt, meta); }
+      catch(err){ console.warn('Claude prompt failed, using local:',err); }
+    }
+    let image = await callGemini(prompt, meta);
+
+    // RENDER mode -> extract true transparency (flat white -> alpha)
+    if(meta.mode==='render'){
+      document.getElementById('procStep').textContent='Extracting transparency…';
+      try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
+    }
+
+    const render = {
+      id: crypto.randomUUID(),
+      styleName, image, meta, transparent: meta.mode==='render',
+      timestamp: Date.now(),
+      filename: buildFilename(styleName, meta),
+    };
+    S.session = [render, ...S.session].slice(0,12);
+    await saveToCatalog(render);
+    showResult(render);
+    renderTray();
+    toast('Render complete');
+  }catch(err){
+    const msg = err?.message||'';
+    const is429 = msg.includes('429')||msg.toLowerCase().includes('quota')||msg.toLowerCase().includes('resource_exhausted');
+    if(is429 && S.showTimer){ showRate(); }
+    else{ toast(msg || 'Generation failed', 'err'); }
+    console.error(err);
+  }finally{
+    clearInterval(iv); setProcessing(false);
+  }
+}
+
+function setProcessing(on){
+  S.processing=on;
+  document.getElementById('proc').classList.toggle('hidden',!on);
+  document.getElementById('placeholder').classList.toggle('hidden', on || !!S.current);
+  document.getElementById('result').classList.toggle('hidden', on || !S.current);
+  const btn=document.getElementById('genBtn'); btn.disabled=on;
+  document.getElementById('genLabel').textContent = on?'Rendering asset…':'Create 3D Render';
+  document.getElementById('genIcon').classList.toggle('spin',on);
+  if(on){
+    document.getElementById('genIcon').innerHTML='<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>';
+  }else{
+    document.getElementById('genIcon').innerHTML='<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>';
+  }
+}
+
+function showResult(render){
+  S.current=render;
+  document.getElementById('placeholder').classList.add('hidden');
+  document.getElementById('proc').classList.add('hidden');
+  const res=document.getElementById('result');
+  res.classList.remove('hidden');
+  res.classList.toggle('transparent', render.transparent);
+  document.getElementById('resultImg').src=render.image;
+  document.getElementById('metaOverlay').innerHTML = `
+    <div class="meta-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
+    <div class="meta-tags">
+      <span class="tag">${esc(render.meta.category)}</span>
+      <span class="tag dim">${esc(render.meta.fabric)}</span>
+      <span class="tag dim">${render.transparent?'TRANSPARENT':'ON MODEL'}</span>
+    </div>`;
+}
+
+// =====================================================================
+// TRANSPARENCY — safe-zone-aware flood-fill background removal
+// (ported from SweaterVision). Only removes pixels reachable from the
+// image edges; interior pixels are protected so light garments survive.
+// =====================================================================
+async function removeBg(b64){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+        const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+        const id=ctx.getImageData(0,0,c.width,c.height); const d=id.data; const W=c.width,H=c.height;
+
+        // 1. Sample 8 perimeter blocks; brightest = background reference
+        function sampleBlock(sx,sy,sz){let r=0,g=0,b=0,n=0;for(let dy=0;dy<sz;dy++)for(let dx=0;dx<sz;dx++){const px=Math.min(W-1,sx+dx),py=Math.min(H-1,sy+dy);const i=(py*W+px)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;}return[r/n,g/n,b/n];}
+        const BS=10, hb=Math.floor(BS/2);
+        const samples=[sampleBlock(0,0,BS),sampleBlock(W-BS,0,BS),sampleBlock(0,H-BS,BS),sampleBlock(W-BS,H-BS,BS),sampleBlock(Math.floor(W/2)-hb,0,BS),sampleBlock(Math.floor(W/2)-hb,H-BS,BS),sampleBlock(0,Math.floor(H/2)-hb,BS),sampleBlock(W-BS,Math.floor(H/2)-hb,BS)];
+        let bgR=0,bgG=0,bgB=0,maxBr=-1;
+        for(const s of samples){const br=(s[0]+s[1]+s[2])/3;if(br>maxBr){maxBr=br;bgR=s[0];bgG=s[1];bgB=s[2];}}
+        const bgBr=(bgR+bgG+bgB)/3;
+
+        // 2. Threshold for "is this pixel background-colored?"
+        const THR = bgBr>200?42:bgBr>128?38:45;
+        const dist=(r,g,b)=>{const dr=r-bgR,dg=g-bgG,db=b-bgB;return Math.sqrt(dr*dr+dg*dg+db*db);};
+
+        // 3. Anchor mask — pixels clearly NOT background-colored
+        const anchor=new Uint8Array(W*H);
+        for(let i=0;i<W*H;i++){const pi=i*4;if(dist(d[pi],d[pi+1],d[pi+2])>THR)anchor[i]=1;}
+
+        // 4. Safe zone — BFS from anchors, blocked by bg-like pixels
+        const PROP_THR=Math.max(6,THR/5);
+        const safe=new Uint8Array(W*H);
+        const queue=new Int32Array(W*H); let qh=0,qt=0;
+        for(let i=0;i<W*H;i++){if(anchor[i]){safe[i]=1;queue[qt++]=i;}}
+        while(qh<qt){
+          const i=queue[qh++]; const x=i%W, y=(i/W)|0;
+          const nb=[];
+          if(x>0)nb.push(i-1); if(x<W-1)nb.push(i+1); if(y>0)nb.push(i-W); if(y<H-1)nb.push(i+W);
+          for(const ni of nb){ if(safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])>PROP_THR){ safe[ni]=1; queue[qt++]=ni; } }
+        }
+
+        // 5. Edge-seeded flood fill marks bg pixels, skipping safe zone
+        const vis=new Uint8Array(W*H);
+        const stack=[]; 
+        const seed=(x,y)=>{ const i=y*W+x; if(vis[i]||safe[i])return; const pi=i*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[i]=1; stack.push(i); } };
+        for(let x=0;x<W;x++){ seed(x,0); seed(x,H-1); }
+        for(let y=0;y<H;y++){ seed(0,y); seed(W-1,y); }
+        while(stack.length){
+          const i=stack.pop(); const x=i%W, y=(i/W)|0;
+          const ns=[]; if(x>0)ns.push(i-1); if(x<W-1)ns.push(i+1); if(y>0)ns.push(i-W); if(y<H-1)ns.push(i+W);
+          for(const ni of ns){ if(vis[ni]||safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[ni]=1; stack.push(ni); } }
+        }
+
+        // 6. Soft 1-pixel feather at boundary, then write alpha
+        const alpha=new Float32Array(W*H);
+        for(let i=0;i<W*H;i++) alpha[i]=vis[i]?0:1;
+        for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+          const i=y*W+x;
+          if(!vis[i]&&!safe[i]){
+            if(vis[i-1]||vis[i+1]||vis[i-W]||vis[i+W]){
+              const pi=i*4; const dd=dist(d[pi],d[pi+1],d[pi+2]);
+              alpha[i]=Math.max(0,Math.min(1,(dd-THR*0.6)/(THR*0.4)));
+            }
+          }
+        }
+        for(let i=0;i<W*H;i++) d[i*4+3]=Math.round(alpha[i]*255);
+        ctx.putImageData(id,0,0);
+        res(c.toDataURL('image/png'));
+      }catch(e){ console.warn('removeBg error',e); res(b64); }
+    };
+    img.onerror=()=>res(b64);
+    img.src=b64;
+  });
+}
+
+// =====================================================================
+// EXPORT — filename rule, download, share, batch
+// =====================================================================
+function buildFilename(styleName, meta){
+  const parts=[styleName, meta.category, meta.fabric, meta.fit].filter(Boolean).map(s=>String(s).toUpperCase());
+  return parts.join(' - ').replace(/%/g,'PCT').replace(/[\\/:*?"<>|]/g,'') + '.png';
+}
+function dlImage(dataUrl, filename){
+  const a=document.createElement('a'); a.href=dataUrl; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function downloadCurrent(){ if(S.current) dlImage(S.current.image, S.current.filename); }
+function downloadRender(id){ const r=findRender(id); if(r) dlImage(r.image, r.filename); }
+
+async function shareCurrent(){ if(S.current) await shareRender(S.current); }
+async function shareRender(r){
+  try{
+    if(navigator.canShare){
+      const blob=await (await fetch(r.image)).blob();
+      const file=new File([blob], r.filename, {type:'image/png'});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
+    }
+    if(navigator.share){ await navigator.share({title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
+    await navigator.clipboard.writeText(window.location.href);
+    toast('Link copied (native sharing unavailable)');
+  }catch(e){ if(e.name!=='AbortError'){ toast('Share failed','err'); } }
+}
+function batchExport(){
+  const list=filteredCatalog();
+  if(!list.length){ toast('Nothing to export','err'); return; }
+  list.forEach((r,i)=> setTimeout(()=>dlImage(r.image, r.filename), i*600));
+  toast(`Exporting ${list.length} asset${list.length>1?'s':''}…`);
+}
+
+// =====================================================================
+// SESSION TRAY
+// =====================================================================
+function renderTray(){
+  const body=document.getElementById('trayBody');
+  document.getElementById('trayCount').textContent=`${S.session.length} OBJECTS`;
+  if(!S.session.length){ body.innerHTML='<div class="tray-empty">Studio history is empty. Generate your first asset to see it here.</div>'; return; }
+  body.innerHTML=S.session.map(r=>`
+    <div class="tray-card ${r.transparent?'transparent':''} ${S.current&&S.current.id===r.id?'active':''}" onclick="selectRender('${r.id}')">
+      <img src="${r.image}" alt="${esc(r.styleName)}"/>
+      <div class="tray-ov">
+        <div class="nm">${esc(r.styleName)}</div>
+        <div class="mini-acts">
+          <button class="mini-btn" title="Download" onclick="event.stopPropagation();downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+          <button class="mini-btn" title="Share" onclick="event.stopPropagation();shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          <button class="mini-btn" title="Redo" onclick="event.stopPropagation();redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function selectRender(id){ const r=findRender(id); if(r){ showResult(r); loadIntoForm(r); renderTray(); } }
+function shareById(id){ const r=findRender(id); if(r) shareRender(r); }
+function findRender(id){ return S.session.find(r=>r.id===id) || S.catalog.find(r=>r.id===id); }
+
+function loadIntoForm(r){
+  document.getElementById('styleName').value=r.styleName;
+  document.getElementById('fabric').value=r.meta.fabric;
+  document.getElementById('notes').value=r.meta.notes||'';
+  S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
+  setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
+  if(r.meta.model){ document.getElementById('mGender').value=r.meta.model.gender||'Male'; document.getElementById('mAge').value=r.meta.model.age||'25-30'; document.getElementById('mEthnicity').value=r.meta.model.ethnicity||''; document.getElementById('mSkin').value=r.meta.model.skin||''; document.getElementById('mHair').value=r.meta.model.hair||''; }
+}
+function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); switchTab('studio'); generate(); }
+
+// =====================================================================
+// CATALOG (IndexedDB persistence)
+// =====================================================================
+let DB=null;
+function openDB(){
+  return new Promise((res)=>{
+    const req=indexedDB.open('rd_style_studio',1);
+    req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains('renders')) db.createObjectStore('renders',{keyPath:'id'}); };
+    req.onsuccess=e=>{ DB=e.target.result; res(); };
+    req.onerror=()=>{ console.warn('IndexedDB unavailable'); res(); };
+  });
+}
+function saveToCatalog(render){
+  return new Promise((res)=>{
+    if(!DB){ S.catalog=[render,...S.catalog]; updateCounts(); return res(); }
+    const tx=DB.transaction('renders','readwrite'); tx.objectStore('renders').put(render);
+    tx.oncomplete=()=>{ S.catalog=[render,...S.catalog]; updateCounts(); res(); };
+    tx.onerror=()=>{ toast('Catalog save failed (storage full?)','err'); res(); };
+  });
+}
+function loadCatalog(){
+  if(!DB){ updateCounts(); return; }
+  const tx=DB.transaction('renders','readonly'); const rq=tx.objectStore('renders').getAll();
+  rq.onsuccess=()=>{ S.catalog=(rq.result||[]).sort((a,b)=>b.timestamp-a.timestamp); updateCounts(); };
+}
+function deleteRender(id){
+  if(!confirm('Delete this render from the catalog?')) return;
+  if(DB){ const tx=DB.transaction('renders','readwrite'); tx.objectStore('renders').delete(id); }
+  S.catalog=S.catalog.filter(r=>r.id!==id);
+  S.session=S.session.filter(r=>r.id!==id);
+  if(S.current&&S.current.id===id){ S.current=null; document.getElementById('result').classList.add('hidden'); document.getElementById('placeholder').classList.remove('hidden'); }
+  updateCounts(); renderCatalog(); renderTray();
+}
+function updateCounts(){
+  document.getElementById('catCount').textContent=S.catalog.length;
+  document.getElementById('catTotalNum').textContent=S.catalog.length;
+}
+function filteredCatalog(){
+  const q=document.getElementById('filterText').value.toLowerCase().trim();
+  const fc=document.getElementById('filterCat').value;
+  const fm=document.getElementById('filterMode').value;
+  return S.catalog.filter(r=>
+    (!q||r.styleName.toLowerCase().includes(q)) &&
+    (!fc||r.meta.category===fc) &&
+    (!fm||r.meta.mode===fm)
+  );
+}
+function renderCatalog(){
+  updateCounts();
+  const wrap=document.getElementById('catGridWrap');
+  const list=filteredCatalog();
+  if(!S.catalog.length){
+    wrap.innerHTML=`<div class="cat-empty"><svg viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p>No renders in your catalog yet</p><button class="btn-secondary" style="max-width:200px" onclick="switchTab('studio')">Go to Studio</button></div>`;
+    return;
+  }
+  if(!list.length){ wrap.innerHTML=`<div class="cat-empty"><p>No assets match your filters</p></div>`; return; }
+  wrap.innerHTML=`<div class="cat-grid">${list.map(r=>`
+    <div class="cat-card">
+      <div class="cat-img ${r.transparent?'transparent':''}">
+        <img src="${r.image}" alt="${esc(r.styleName)}"/>
+        <div class="cat-acts">
+          <button class="cact dl full" onclick="downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
+          <button class="cact gh full" onclick="shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+          <button class="cact gh" title="Open in Studio" onclick="openInStudio('${r.id}')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="cact gh" title="Redo" onclick="redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+          <button class="cact del" title="Delete" onclick="deleteRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+        </div>
+      </div>
+      <div class="cat-info">
+        <div class="row"><span class="nm">${esc(r.styleName)}</span><span class="dt">${new Date(r.timestamp).toLocaleDateString()}</span></div>
+        <div class="sub">${esc(r.meta.category)} · ${esc(r.meta.fabric)} · ${r.transparent?'Transparent':'On Model'}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function openInStudio(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); showResult(r); switchTab('studio'); }
+
+// =====================================================================
+// SETTINGS / RATE LIMIT / TOAST
+// =====================================================================
+function showSettings(){
+  document.getElementById('geminiKeyInput').value=S.apiKey;
+  document.getElementById('anthropicKeyInput').value=S.anthropicKey;
+  document.getElementById('showTimerCheck').checked=S.showTimer;
+  refreshClaudeNote();
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+function hideSettings(){ document.getElementById('settingsModal').classList.add('hidden'); }
+function saveSettings(){
+  S.apiKey=document.getElementById('geminiKeyInput').value.trim();
+  S.anthropicKey=document.getElementById('anthropicKeyInput').value.trim();
+  S.showTimer=document.getElementById('showTimerCheck').checked;
+  localStorage.setItem('rd_gemini_key',S.apiKey);
+  localStorage.setItem('rd_anthropic_key',S.anthropicKey);
+  localStorage.setItem('rd_show_timer',S.showTimer?'true':'false');
+  updateKeyDot(); hideSettings(); toast('Settings saved');
+}
+function refreshClaudeNote(){
+  const on=!!document.getElementById('anthropicKeyInput').value.trim();
+  document.getElementById('claudeActive').classList.toggle('hidden',!on);
+  document.getElementById('claudeInactive').classList.toggle('hidden',on);
+}
+document.addEventListener('input',e=>{ if(e.target&&e.target.id==='anthropicKeyInput') refreshClaudeNote(); });
+function toggleKey(id){ const el=document.getElementById(id); el.type=el.type==='password'?'text':'password'; }
+function updateKeyDot(){ document.getElementById('keyDot').classList.toggle('ok',!!S.apiKey); }
+
+let rateIv=null;
+function showRate(){
+  const m=document.getElementById('rateModal'); m.classList.remove('hidden');
+  let t=120; const disp=document.getElementById('rateTime');
+  const tick=()=>{ const mm=Math.floor(t/60), ss=String(t%60).padStart(2,'0'); disp.textContent=`${mm}:${ss}`; if(t<=0){ clearInterval(rateIv);} t--; };
+  tick(); clearInterval(rateIv); rateIv=setInterval(tick,1000);
+}
+function hideRate(){ clearInterval(rateIv); document.getElementById('rateModal').classList.add('hidden'); }
+function toggleTimerPref(cb){ S.showTimer=!cb.checked; localStorage.setItem('rd_show_timer',S.showTimer?'true':'false'); }
+
+function toast(msg, type){
+  const wrap=document.getElementById('toastWrap');
+  const el=document.createElement('div'); el.className='toast'+(type==='err'?' err':'');
+  el.innerHTML=`<span class="i"></span>${esc(msg)}`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+init();
+</script>
+</body>
+</html>
