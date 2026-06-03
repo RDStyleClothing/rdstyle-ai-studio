@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V1.6</title>
+<title>RD STYLE AI STUDIO — V1.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -145,6 +145,15 @@ select.select option{background:#0d0d0d}
 .tag.move{background:#fff;color:#000;border-color:#fff}
 .play-badge{position:absolute;top:8px;left:8px;z-index:3;display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-family:var(--font-mono);font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#fff;pointer-events:none}
 .play-badge svg{width:9px;height:9px;fill:#fff;stroke:none}
+.lock-row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.lock-row.empty{align-items:flex-start;flex-direction:column;gap:10px}
+.lock-thumb{width:46px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex-shrink:0}
+.lock-info{flex:1;min-width:0}
+.lock-on{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7CFF9B}
+.lock-sub{font-size:11px;color:#888;margin-top:3px;line-height:1.4}
+.mini-pill{background:rgba(255,255,255,0.1);border:1px solid var(--line);color:#fff;font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:7px 12px;border-radius:999px;cursor:pointer;flex-shrink:0;transition:background .15s}
+.mini-pill:hover:not(:disabled){background:rgba(255,255,255,0.2)}
+.mini-pill:disabled{opacity:0.4;cursor:not-allowed}
 
 /* 3-up mode picker */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -168,7 +177,7 @@ select.select option{background:#0d0d0d}
 .tray-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85),transparent 60%);opacity:0;transition:opacity .2s;display:flex;flex-direction:column;justify-content:flex-end;padding:8px}
 .tray-card:hover .tray-ov{opacity:1}
 .tray-ov .nm{font-size:8px;font-weight:700;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
-.mini-acts{display:flex;gap:5px}
+.mini-acts{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .mini-btn{padding:5px;background:rgba(255,255,255,0.12);border-radius:6px;transition:all .15s}
 .mini-btn:hover{background:#fff}
 .mini-btn:hover svg{stroke:#000}
@@ -264,7 +273,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.6</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.8</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -304,6 +313,7 @@ select.select option{background:#0d0d0d}
           </button>
           <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>
         </div>
+        <div id="garmentLockPanel" style="margin-top:14px"></div>
       </section>
 
       <section>
@@ -323,6 +333,7 @@ select.select option{background:#0d0d0d}
 
       <section id="modelConfig" class="hidden">
         <label class="field-label">Model Configuration</label>
+        <div id="modelLockPanel" style="margin-bottom:16px"></div>
         <div class="grid2" style="gap:14px">
           <div>
             <label class="sub-label">Sex</label>
@@ -621,6 +632,8 @@ const S = {
   mode:'render', category:'Outerwear', fit:'Slim',
   moveEngine:'veo',
   refImage:null,
+  lockedModel:null,        // { image, label } — reused as identity reference
+  lockedGarment:null,      // { image, label } — reused as garment reference
   spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92 },
   current:null,          // current preview render object
   session:[],            // in-session renders (newest first)
@@ -633,12 +646,18 @@ function init(){
   S.apiKey = localStorage.getItem('rd_gemini_key') || '';
   S.anthropicKey = localStorage.getItem('rd_anthropic_key') || '';
   S.showTimer = localStorage.getItem('rd_show_timer') !== 'false';
+  const lm = localStorage.getItem('rd_locked_model');
+  if(lm) S.lockedModel = { image:lm, label: localStorage.getItem('rd_locked_model_label')||'Model' };
+  const lg = localStorage.getItem('rd_locked_garment');
+  if(lg) S.lockedGarment = { image:lg, label: localStorage.getItem('rd_locked_garment_label')||'Garment' };
   buildCategoryButtons();
   buildFitButtons();
   buildFilterCategories();
   buildPresetOptions();
   refreshSpecUI();
   setMoveEngine(S.moveEngine);
+  renderModelLock();
+  renderGarmentLock();
   updateKeyDot();
   openDB().then(loadCatalog);
 }
@@ -683,6 +702,7 @@ function setMode(m){
   });
   const usesModel = (m==='model'||m==='move');
   document.getElementById('modelConfig').classList.toggle('hidden',!usesModel);
+  if(usesModel) renderModelLock();
   document.getElementById('moveConfig').classList.toggle('hidden',m!=='move');
   document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
   document.getElementById('moveNote').classList.toggle('hidden',m!=='move');
@@ -932,7 +952,9 @@ async function generate(){
         try{ document.getElementById('procStep').textContent='Tightening prompt with Claude…'; prompt = await buildClaudePrompt(prompt, meta); }
         catch(err){ console.warn('Claude prompt failed, using local:',err); }
       }
-      image = await callGemini(prompt, meta);
+      const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
+      if(lockClause) prompt += lockClause;
+      image = await callGemini(prompt, meta, 0, lockImgs);
       // RENDER mode -> extract true transparency (flat white -> alpha)
       if(meta.mode==='render'){
         document.getElementById('procStep').textContent='Extracting transparency…';
@@ -1025,6 +1047,8 @@ function showResult(render){
       ${sizeTag}
       ${modeTag}
     </div>`;
+  renderModelLock();
+  renderGarmentLock();
 }
 
 // =====================================================================
@@ -1034,15 +1058,138 @@ function showResult(render){
 // =====================================================================
 function veoAspect(spec){ return (spec && spec.width < spec.height) ? '9:16' : '16:9'; }
 
+const MODEL_LOCK_CLAUSE = `MODEL IDENTITY LOCK: One attached reference image shows the EXACT model to use. Reproduce this same individual precisely — identical face, bone structure, skin tone, hair color and hairstyle, age and body type. Keep the person identical; only the garment (the hero piece described above), pose, camera angle and scene may change. It must read as unmistakably the same person across every shot.`;
+
+function modelLockRefs(){ return S.lockedModel ? [S.lockedModel.image] : []; }
+function garmentLockRefs(){ return S.lockedGarment ? [S.lockedGarment.image] : []; }
+
+const GARMENT_LOCK_CLAUSE = `GARMENT LOCK: One attached reference image shows the EXACT garment to depict. Replicate this same physical product precisely — identical color/colorway, fabric, knit/weave, pattern, panel construction, seams, trims, buttons and proportions — even when shown from a different camera angle. Ignore any person, mannequin or background in that reference; copy only the garment. This must be the same item across every shot.`;
+
+// Combined extra reference images + prompt clause for the locked garment/model.
+function lockExtras(meta){
+  const imgs=[]; let clause='';
+  if(S.lockedGarment){ imgs.push(S.lockedGarment.image); clause += '\n\n'+GARMENT_LOCK_CLAUSE; }
+  if(S.lockedModel && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.lockedModel.image); clause += '\n\n'+MODEL_LOCK_CLAUSE; }
+  return { imgs, clause };
+}
+
+function renderModelLock(){
+  const el=document.getElementById('modelLockPanel');
+  if(!el) return;
+  if(S.lockedModel){
+    el.innerHTML=`<label class="sub-label">Locked Model</label>
+      <div class="lock-row">
+        <img src="${S.lockedModel.image}" class="lock-thumb" alt="Locked model"/>
+        <div class="lock-info"><div class="lock-on">● Model locked</div><div class="lock-sub">New On-Model &amp; Move renders reuse this exact person.</div></div>
+        <button class="mini-pill" onclick="unlockModel()">Unlock</button>
+      </div>`;
+  }else{
+    const can = S.current && (S.current.meta.mode==='model'||S.current.meta.mode==='move');
+    el.innerHTML=`<label class="sub-label">Model Lock</label>
+      <div class="lock-row empty">
+        <div class="lock-sub">Lock a model to reuse the exact same person across renders, alternate angles and clips. Generate an On-Model or Move render you like, then lock it.</div>
+        <button class="mini-pill" ${can?'':'disabled'} onclick="lockCurrentModel()">${can?'Lock current render':'Select a model render first'}</button>
+      </div>`;
+  }
+}
+async function lockCurrentModel(){ if(S.current) await lockModelFrom(S.current); }
+async function lockModelById(id){ const r=findRender(id); if(r) await lockModelFrom(r); }
+async function lockModelFrom(r){
+  if(!(r.meta.mode==='model'||r.meta.mode==='move')){ toast('Lock works on On-Model or Move renders only','err'); return; }
+  const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
+  try{
+    const small = await downscaleDataURL(src, 768);
+    S.lockedModel = { image:small, label:r.styleName||'Model' };
+    persistLock();
+    renderModelLock(); renderTray();
+    toast('Model locked — new renders will reuse this person');
+  }catch(e){ toast('Could not lock model','err'); }
+}
+function unlockModel(){
+  S.lockedModel=null;
+  localStorage.removeItem('rd_locked_model'); localStorage.removeItem('rd_locked_model_label');
+  renderModelLock(); renderTray();
+  toast('Model unlocked');
+}
+function persistLock(){
+  try{ localStorage.setItem('rd_locked_model', S.lockedModel.image); localStorage.setItem('rd_locked_model_label', S.lockedModel.label||''); }
+  catch(e){ toast('Model locked for this session (too large to save offline)','err'); }
+}
+async function downscaleDataURL(src, max){
+  const im=await loadImg(src);
+  let w=im.width, h=im.height;
+  if(Math.max(w,h)>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  c.getContext('2d').drawImage(im,0,0,w,h);
+  return c.toDataURL('image/jpeg',0.9);
+}
+
+function renderGarmentLock(){
+  const el=document.getElementById('garmentLockPanel');
+  if(!el) return;
+  if(S.lockedGarment){
+    el.innerHTML=`<label class="sub-label">Locked Garment</label>
+      <div class="lock-row">
+        <img src="${S.lockedGarment.image}" class="lock-thumb" alt="Locked garment"/>
+        <div class="lock-info"><div class="lock-on">● Garment locked</div><div class="lock-sub">${esc(S.lockedGarment.label)} — reused as a reference for new angles &amp; modes.</div></div>
+        <button class="mini-pill" onclick="unlockGarment()">Unlock</button>
+      </div>`;
+  }else{
+    const can = !!S.current;
+    el.innerHTML=`<label class="sub-label">Garment Lock</label>
+      <div class="lock-row empty">
+        <div class="lock-sub">Lock a garment to keep the same physical piece consistent across alternate angles and modes. Unlock before rendering a different style.</div>
+        <button class="mini-pill" ${can?'':'disabled'} onclick="lockCurrentGarment()">${can?'Lock current render':'Generate a render first'}</button>
+      </div>`;
+  }
+}
+async function lockCurrentGarment(){ if(S.current) await lockGarmentFrom(S.current); }
+async function lockGarmentById(id){ const r=findRender(id); if(r) await lockGarmentFrom(r); }
+async function lockGarmentFrom(r){
+  const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
+  try{
+    const small = await downscaleDataURL(src, 768);
+    S.lockedGarment = { image:small, label:r.styleName||'Garment' };
+    persistGarmentLock();
+    renderGarmentLock(); renderTray();
+    toast('Garment locked — new renders will match this piece');
+  }catch(e){ toast('Could not lock garment','err'); }
+}
+function unlockGarment(){
+  S.lockedGarment=null;
+  localStorage.removeItem('rd_locked_garment'); localStorage.removeItem('rd_locked_garment_label');
+  renderGarmentLock(); renderTray();
+  toast('Garment unlocked');
+}
+function persistGarmentLock(){
+  try{ localStorage.setItem('rd_locked_garment', S.lockedGarment.image); localStorage.setItem('rd_locked_garment_label', S.lockedGarment.label||''); }
+  catch(e){ toast('Garment locked for this session (too large to save offline)','err'); }
+}
+
+// Lifestyle on-model still for Move — honors Additional Art Direction for scene + styling
+function buildMoveStillPrompt(meta){
+  const m = meta.model;
+  const dir = meta.notes
+    ? `ART DIRECTION (follow exactly — this governs the scene, location, styling and mood): ${meta.notes}`
+    : `Natural real-world lifestyle setting suitable for a fashion campaign.`;
+  return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}" — as the hero garment (fabric: ${meta.fabric}; fit: ${meta.fit}).
+MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
+${dir}
+Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
+}
+
 function buildVeoPrompt(meta){
-  return `Animate this exact photograph into a short, photorealistic fashion clip. Keep the SAME model (same face, hair, body) wearing the SAME ${meta.category} — "${meta.styleName}" — with the identical color, fabric and fit, and the SAME background and lighting. Do not restyle, recolor, or swap the garment. Motion: ${meta.motion}. Produce smooth, natural, true-to-life movement with a correct walking gait and weight shift; understated and cinematic. Keep the framing stable. No morphing, no warping limbs, no extra people entering frame, no on-screen text, captions, watermarks or logos.`;
+  const dir = meta.notes ? ` ADDITIONAL DIRECTION (governs scene, styling and action where it differs from the above): ${meta.notes}.` : '';
+  return `Animate this exact photograph into a short, photorealistic fashion clip. Keep the SAME model (same face, hair, body) wearing the SAME ${meta.category} — "${meta.styleName}" — with the identical color, fabric and fit. Do not restyle, recolor or swap the garment. Primary motion: ${meta.motion}.${dir} Produce smooth, natural, true-to-life movement with a correct walking gait and weight shift; understated and cinematic. Keep framing stable. No morphing, no warping limbs, no extra people entering frame, no on-screen text, captions, watermarks or logos.`;
 }
 
 async function generateMoveVeo(meta){
-  // 1) On-model still to animate
+  // 1) Lifestyle on-model still to animate (honors art direction + locked model)
   document.getElementById('procStep').textContent='Rendering the on-model still…';
   const stillMeta = { ...meta, mode:'model' };
-  const still = await callGemini(buildPrompt(stillMeta), stillMeta);
+  const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
+  let stillPrompt = buildMoveStillPrompt(meta) + lockClause;
+  const still = await callGemini(stillPrompt, stillMeta, 0, lockImgs);
   const poster = await fitToSpec(still, { ...meta.spec });
 
   // 2) Submit to Veo
@@ -1161,7 +1308,9 @@ async function generateMove(meta){
   let FW, FH;
   if(ar>=1){ FW=MAX; FH=Math.round(MAX/ar); } else { FH=MAX; FW=Math.round(MAX*ar); }
   const padBg = spec.bg==='white' ? '#ffffff' : '#000000';
-  const base = buildPrompt({ ...meta, mode:'move' }); // on-model rules
+  const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
+  let base = buildMoveStillPrompt(meta) + lockClause;   // honors Additional Art Direction + locks
+  const lockRefs = lockImgs;
 
   const frameSrcs = [];
   let anchor0 = null;
@@ -1176,7 +1325,7 @@ HARD CONSISTENCY (identical across every frame): the SAME model (same face, hair
 ONLY the pose/motion changes: advance to ${phase}. The sequence must loop seamlessly — frame ${N} should flow naturally back into frame 1.
 Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4 portrait.`;
 
-    const extra = [];
+    const extra = [...lockRefs];
     if(anchor0) extra.push(anchor0);
     const prev = frameSrcs[frameSrcs.length-1];
     if(prev && prev!==anchor0) extra.push(prev);
@@ -1396,6 +1545,8 @@ function renderTray(){
           <button class="mini-btn" title="Download" onclick="event.stopPropagation();downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
           <button class="mini-btn" title="Share" onclick="event.stopPropagation();shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           <button class="mini-btn" title="Redo" onclick="event.stopPropagation();redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+          ${(r.meta.mode==='model'||r.meta.mode==='move')?`<button class="mini-btn" title="Lock this model" onclick="event.stopPropagation();lockModelById('${r.id}')"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>`:''}
+          <button class="mini-btn" title="Lock this garment" onclick="event.stopPropagation();lockGarmentById('${r.id}')"><svg viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></button>
         </div>
       </div>
     </div>`).join('');
