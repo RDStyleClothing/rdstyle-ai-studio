@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V1.8</title>
+<title>RD STYLE AI STUDIO — V1.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -273,7 +273,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.8</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.9</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -300,8 +300,25 @@ select.select option{background:#0d0d0d}
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <section>
-        <label class="field-label">Style Name &amp; Color</label>
-        <input type="text" id="styleName" class="text-input" placeholder="e.g. Sartorial Trench — Sage Khaki"/>
+        <label class="field-label">Style Name or Number <span style="color:var(--accent,#e26d5c);font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em">*REQUIRED</span></label>
+        <input type="text" id="styleName" class="text-input" placeholder="e.g. 78MS301S"/>
+        <div class="grid2" style="gap:10px;margin-top:14px">
+          <div>
+            <label class="sub-label">Color Name</label>
+            <input type="text" id="colorName" class="text-input" placeholder="e.g. Grey Melange"/>
+          </div>
+          <div>
+            <label class="sub-label">Color Code</label>
+            <input type="text" id="colorCode" class="text-input" placeholder="e.g. F123"/>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label class="sub-label">Fabric Content <span style="opacity:0.5">(optional)</span></label>
+          <input type="text" id="fabricContent" class="text-input" placeholder="e.g. 100 Cotton"/>
+        </div>
+        <div class="note-box hidden" id="autofillNote" style="margin-top:12px">
+          <b>Auto-filled from filename.</b> <span id="autofillText"></span> Review and edit the fields above, then Create when correct.
+        </div>
       </section>
 
       <section>
@@ -766,12 +783,32 @@ function refreshSpecUI(){
 
 function handleRef(e){
   const file = e.target.files?.[0]; if(!file) return;
-  if(!document.getElementById('styleName').value){
-    document.getElementById('styleName').value = file.name.split('.').slice(0,-1).join('.');
-  }
+  autofillFromFilename(file.name);
   const reader = new FileReader();
   reader.onloadend = ()=>{ S.refImage = reader.result; showRefPreview(); };
   reader.readAsDataURL(file);
+}
+// Parse "STYLE - COLOR NAME - COLOR CODE - FABRIC CONTENT" from an uploaded
+// filename and fill any EMPTY fields. Requires spaced hyphens so hyphenated
+// style codes (e.g. 78MS-301) aren't split. Never auto-runs.
+function autofillFromFilename(name){
+  const base = name.replace(/\.[^.]+$/,'').trim();
+  const parts = (/\s-\s/.test(base) ? base.split(/\s+-\s+/) : [base]).map(s=>s.trim()).filter(Boolean);
+  const fields = ['styleName','colorName','colorCode','fabricContent'];
+  const labels = ['Style','Color','Code','Fabric'];
+  const filled=[];
+  parts.slice(0,4).forEach((val,i)=>{
+    const el=document.getElementById(fields[i]); if(!el) return;
+    if(!el.value.trim()){ el.value=val; filled.push(`${labels[i]} → ${val}`); }
+  });
+  const note=document.getElementById('autofillNote');
+  if(note){
+    if(filled.length){
+      document.getElementById('autofillText').textContent = filled.join('   ·   ') + '.';
+      note.classList.remove('hidden');
+      toast('Fields auto-filled from filename — please review');
+    }
+  }
 }
 function showRefPreview(){
   document.getElementById('refSlot').innerHTML = `
@@ -823,23 +860,25 @@ function buildPrompt(meta){
   ];
 
   const refLine = meta.hasRef ? "REFERENCE IMAGE: the attached image is the design/silhouette reference — match its construction, pattern, drape and color precisely." : "";
+  const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
+  const fabricStr = meta.fabricContent ? `${meta.fabric} — ${meta.fabricContent}` : meta.fabric;
 
   return `AI FASHION CATALOG ENGINE — produce a premium menswear render.
-STYLE NAME & COLOR: "${styleLine}"
+STYLE NAME / NUMBER: "${styleLine}"${colorStr?`\nCOLORWAY: ${colorStr}`:''}
 GARMENT CATEGORY: ${meta.category}
-PRIMARY FABRIC: ${meta.fabric}   |   FIT: ${meta.fit}
+PRIMARY FABRIC: ${fabricStr}   |   FIT: ${meta.fit}
 ART DIRECTION: ${meta.notes || 'Follow the reference and category conventions closely.'}
 ${refLine}
 
 CRITICAL RULES (ABSOLUTE COMPLIANCE — NO EXCEPTIONS):
 ${rules.map((r,i)=>`${i+1}. ${r}`).join('\n')}
-TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: match the colorway named in the style. Luxury catalog realism throughout.`;
+TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: ${colorStr ? `the garment colorway is ${colorStr} — render this exact color faithfully and consistently across the whole garment.` : 'match the colorway named in the style.'} Luxury catalog realism throughout.`;
 }
 
 // Optional: rewrite art direction into a tighter prompt via Claude
 async function buildClaudePrompt(localPrompt, meta){
   const system = `You are an expert fashion AI prompt engineer for menswear e-commerce renders. Rewrite the brief into ONE dense paragraph (max 160 words, no bullets, no line breaks) optimized for Google Gemini image generation. Preserve every hard rule (ghost mannequin vs on-model, pure #FFFFFF background for ghost mannequin, front-facing, 3:4, no tags/hangers, fabric and color fidelity). Be specific about fabric texture and the named colorway.`;
-  const user = `Garment: ${meta.category}; Fabric: ${meta.fabric}; Fit: ${meta.fit}; Mode: ${meta.mode==='render'?'ghost mannequin transparent product shot':'on-model editorial'}; Style/color: ${meta.styleName}; Art direction: ${meta.notes||'(none)'}\n\nBase prompt to tighten:\n${localPrompt}`;
+  const user = `Garment: ${meta.category}; Fabric: ${meta.fabric}${meta.fabricContent?' ('+meta.fabricContent+')':''}; Fit: ${meta.fit}; Mode: ${meta.mode==='render'?'ghost mannequin transparent product shot':'on-model editorial'}; Style: ${meta.styleName}; Colorway: ${[meta.colorName,meta.colorCode].filter(Boolean).join(' / ')||'(as named)'}; Art direction: ${meta.notes||'(none)'}\n\nBase prompt to tighten:\n${localPrompt}`;
   const resp = await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':S.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
@@ -902,10 +941,13 @@ const STEPS = ["Analyzing brief…","Interpreting style selection…","Building 
 async function generate(){
   if(!S.apiKey){ showSettings(); toast('Add your Gemini API key first','err'); return; }
   const styleName = document.getElementById('styleName').value.trim();
-  if(!styleName){ toast('Enter a style name & color','err'); return; }
+  if(!styleName){ toast('Enter a style name or number','err'); return; }
 
   const meta = {
     styleName,
+    colorName: document.getElementById('colorName').value.trim(),
+    colorCode: document.getElementById('colorCode').value.trim(),
+    fabricContent: document.getElementById('fabricContent').value.trim(),
     category: S.category,
     fabric: document.getElementById('fabric').value,
     fit: S.fit,
@@ -1040,7 +1082,7 @@ function showResult(render){
       ? `<span class="tag dim">LOOP GIF</span>`
       : (render.meta.spec ? `<span class="tag dim">${render.meta.spec.width}×${render.meta.spec.height} ${render.meta.spec.format.toUpperCase()}</span>` : '');
   bar.innerHTML = `
-    <div class="ib-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
+    <div class="ib-name"><div class="k">Style / Colorway</div><div class="v">${esc(render.styleName)}${render.meta.colorName?' · '+esc(render.meta.colorName):''}</div></div>
     <div class="ib-tags">
       <span class="tag dim">${esc(render.meta.category)}</span>
       <span class="tag dim">${esc(render.meta.fabric)}</span>
@@ -1169,10 +1211,11 @@ function persistGarmentLock(){
 // Lifestyle on-model still for Move — honors Additional Art Direction for scene + styling
 function buildMoveStillPrompt(meta){
   const m = meta.model;
+  const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
   const dir = meta.notes
     ? `ART DIRECTION (follow exactly — this governs the scene, location, styling and mood): ${meta.notes}`
     : `Natural real-world lifestyle setting suitable for a fashion campaign.`;
-  return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}" — as the hero garment (fabric: ${meta.fabric}; fit: ${meta.fit}).
+  return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
 MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
@@ -1492,7 +1535,8 @@ async function removeBg(b64){
 // =====================================================================
 function buildFilename(styleName, meta){
   const ext = meta.mode==='move' ? (meta.engine==='veo'?'mp4':'gif') : (meta.spec && meta.spec.format==='jpeg' ? 'jpg' : 'png');
-  const parts=[styleName, meta.category, meta.fabric, meta.fit].filter(Boolean).map(s=>String(s).toUpperCase());
+  // SweaterVision naming: STYLE - COLOR NAME - COLOR CODE - FABRIC CONTENT (omit any blanks)
+  const parts=[styleName, meta.colorName, meta.colorCode, meta.fabricContent].filter(Boolean).map(s=>String(s).trim().toUpperCase());
   return parts.join(' - ').replace(/%/g,'PCT').replace(/[\\/:*?"<>|]/g,'') + '.' + ext;
 }
 function dlImage(dataUrl, filename){
@@ -1557,6 +1601,9 @@ function findRender(id){ return S.session.find(r=>r.id===id) || S.catalog.find(r
 
 function loadIntoForm(r){
   document.getElementById('styleName').value=r.styleName;
+  document.getElementById('colorName').value=r.meta.colorName||'';
+  document.getElementById('colorCode').value=r.meta.colorCode||'';
+  document.getElementById('fabricContent').value=r.meta.fabricContent||'';
   document.getElementById('fabric').value=r.meta.fabric;
   document.getElementById('notes').value=r.meta.notes||'';
   S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
