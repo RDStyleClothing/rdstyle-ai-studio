@@ -132,6 +132,21 @@ select.select option{background:#0d0d0d}
 .act-primary{background:#fff;color:#000}.act-primary:hover{background:#e5e5e5}
 .act-ghost{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);border:1px solid var(--line);color:#fff}.act-ghost:hover{background:rgba(255,255,255,0.2)}
 
+/* STAGE INNER + INFO BAR (details now sit ABOVE the image, not over it) */
+.stage-inner{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:560px}
+.info-bar{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;animation:barin .25s ease}
+@keyframes barin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.info-bar .ib-name{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.info-bar .ib-name .k{font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.45);letter-spacing:0.2em;text-transform:uppercase}
+.info-bar .ib-name .v{font-family:var(--font-display);font-size:16px;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info-bar .ib-tags{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.info-bar .tag{background:var(--fill)}
+.tag.move{background:#fff;color:#000;border-color:#fff}
+
+/* 3-up mode picker */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .choice{padding:13px 10px;font-size:11px}
+
 /* TRAY */
 .tray{height:200px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column}
 .tray-head{padding:11px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--fill)}
@@ -290,12 +305,16 @@ select.select option{background:#0d0d0d}
 
       <section>
         <label class="field-label">Render Mode</label>
-        <div class="grid2" id="modeGroup">
+        <div class="grid3" id="modeGroup">
           <button class="choice active" data-mode="render" onclick="setMode('render')">Render<svg class="check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
           <button class="choice" data-mode="model" onclick="setMode('model')">On Model<svg class="check hidden" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="choice" data-mode="move" onclick="setMode('move')">Move<svg class="check hidden" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
         </div>
         <div class="note-box" id="renderNote">
           <b>Ghost Mannequin.</b> Renders on flat white, then auto-extracts a true transparent PNG (clean alpha channel) for line sheets and lookbooks.
+        </div>
+        <div class="note-box hidden" id="moveNote">
+          <b>Move.</b> On-model only. Generates a few sequential frames of the model in motion, then stitches them into a looping animated GIF for social posts and website headers. Uses one Gemini call per frame.
         </div>
       </section>
 
@@ -321,6 +340,32 @@ select.select option{background:#0d0d0d}
           <div style="grid-column:span 2">
             <label class="sub-label">Hair Color</label>
             <input type="text" class="text-input" id="mHair" placeholder="e.g. Chestnut Brown"/>
+          </div>
+        </div>
+      </section>
+
+      <section id="moveConfig" class="hidden">
+        <label class="field-label">Motion</label>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <label class="sub-label">Action</label>
+            <select class="select" id="moveMotion">
+              <option>Walking toward the camera</option>
+              <option>Walking down a city street</option>
+              <option>Raising an arm to hail a cab</option>
+              <option>Turning to show the fit</option>
+              <option>Hands in pockets, relaxed sway</option>
+              <option>Looking back over the shoulder</option>
+              <option>Adjusting the collar / cuffs</option>
+            </select>
+          </div>
+          <div>
+            <label class="sub-label">Frames (more = smoother, slower, more quota)</label>
+            <select class="select" id="moveFrames">
+              <option value="4">4 frames</option>
+              <option value="5" selected>5 frames</option>
+              <option value="6">6 frames</option>
+            </select>
           </div>
         </div>
       </section>
@@ -364,24 +409,26 @@ select.select option{background:#0d0d0d}
     <div class="stage-col">
       <div class="stage">
         <div class="glow tr"></div><div class="glow bl"></div>
-        <div class="canvas-frame">
-          <div class="placeholder" id="placeholder">
-            <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-            <p id="phText">Awaiting Input Parameters</p>
-          </div>
-          <div class="proc hidden" id="proc">
-            <div class="proc-ring"></div>
-            <div style="text-align:center;display:flex;flex-direction:column;gap:8px">
-              <p>Generating High-Res Asset</p>
-              <p class="step" id="procStep">Simulating fabric textures…</p>
+        <div class="stage-inner">
+          <div class="info-bar hidden" id="infoBar"></div>
+          <div class="canvas-frame">
+            <div class="placeholder" id="placeholder">
+              <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+              <p id="phText">Awaiting Input Parameters</p>
             </div>
-          </div>
-          <div class="result hidden" id="result">
-            <img id="resultImg" alt="Render preview"/>
-            <div class="meta-overlay" id="metaOverlay"></div>
-            <div class="stage-actions">
-              <button class="act-btn act-primary" onclick="downloadCurrent()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
-              <button class="act-btn act-ghost" onclick="shareCurrent()"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+            <div class="proc hidden" id="proc">
+              <div class="proc-ring"></div>
+              <div style="text-align:center;display:flex;flex-direction:column;gap:8px">
+                <p id="procTitle">Generating High-Res Asset</p>
+                <p class="step" id="procStep">Simulating fabric textures…</p>
+              </div>
+            </div>
+            <div class="result hidden" id="result">
+              <img id="resultImg" alt="Render preview"/>
+              <div class="stage-actions">
+                <button class="act-btn act-primary" onclick="downloadCurrent()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
+                <button class="act-btn act-ghost" onclick="shareCurrent()"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+              </div>
             </div>
           </div>
         </div>
@@ -413,7 +460,7 @@ select.select option{background:#0d0d0d}
       <div class="filters">
         <input type="text" id="filterText" class="text-input" placeholder="Search by style name…" oninput="renderCatalog()"/>
         <select class="select" id="filterCat" onchange="renderCatalog()"><option value="">All Categories</option></select>
-        <select class="select" id="filterMode" onchange="renderCatalog()"><option value="">All Modes</option><option value="render">Ghost Mannequin</option><option value="model">On Model</option></select>
+        <select class="select" id="filterMode" onchange="renderCatalog()"><option value="">All Modes</option><option value="render">Ghost Mannequin</option><option value="model">On Model</option><option value="move">Move (Loop)</option></select>
         <button class="btn-secondary" style="flex:0 0 auto;padding:13px 18px" onclick="batchExport()">Batch Export</button>
       </div>
       <div id="catGridWrap"></div>
@@ -552,10 +599,14 @@ function setMode(m){
   S.mode=m;
   document.querySelectorAll('#modeGroup .choice').forEach(b=>{
     const on=b.dataset.mode===m; b.classList.toggle('active',on);
-    b.querySelector('.check').classList.toggle('hidden',!on);
+    const chk=b.querySelector('.check'); if(chk) chk.classList.toggle('hidden',!on);
   });
-  document.getElementById('modelConfig').classList.toggle('hidden',m!=='model');
+  const usesModel = (m==='model'||m==='move');
+  document.getElementById('modelConfig').classList.toggle('hidden',!usesModel);
+  document.getElementById('moveConfig').classList.toggle('hidden',m!=='move');
   document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
+  document.getElementById('moveNote').classList.toggle('hidden',m!=='move');
+  document.getElementById('genLabel').textContent = m==='move'?'Create Move Loop':'Create 3D Render';
 }
 function setCategory(c){ S.category=c; buildCategoryButtons(); }
 function setFit(f){ S.fit=f; buildFitButtons(); }
@@ -651,11 +702,16 @@ async function buildClaudePrompt(localPrompt, meta){
 // =====================================================================
 // GEMINI CALL (REST, with 429 backoff)
 // =====================================================================
-async function callGemini(prompt, meta, attempt=0){
+async function callGemini(prompt, meta, attempt=0, extraImages=[]){
   const parts = [{ text: prompt }];
   if(meta.hasRef && S.refImage){
     const mime = S.refImage.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
     parts.push({ inline_data:{ data:S.refImage.split(',')[1], mime_type:mime } });
+  }
+  for(const ex of (extraImages||[])){
+    if(!ex) continue;
+    const m = ex.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
+    parts.push({ inline_data:{ data:ex.split(',')[1], mime_type:m } });
   }
   const delays = [2000,4000,8000];
   const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${S.apiKey}`,{
@@ -663,7 +719,7 @@ async function callGemini(prompt, meta, attempt=0){
     body:JSON.stringify({ contents:{ parts }, generationConfig:{ responseModalities:['IMAGE','TEXT'] } })
   });
   if(resp.status===429){
-    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1); }
+    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1,extraImages); }
     throw new Error('429: RESOURCE_EXHAUSTED — quota limit reached.');
   }
   if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Gemini error ${resp.status}`); }
@@ -697,6 +753,8 @@ async function generate(){
     mode: S.mode,
     notes: document.getElementById('notes').value.trim(),
     hasRef: !!S.refImage,
+    motion: document.getElementById('moveMotion').value,
+    frames: parseInt(document.getElementById('moveFrames').value,10)||5,
     model: {
       gender: document.getElementById('mGender').value,
       age: document.getElementById('mAge').value,
@@ -707,21 +765,31 @@ async function generate(){
   };
 
   setProcessing(true);
-  let step=0; document.getElementById('procStep').textContent=STEPS[0];
-  const iv=setInterval(()=>{ if(step<STEPS.length-1) document.getElementById('procStep').textContent=STEPS[++step]; },2200);
+  document.getElementById('procTitle').textContent = meta.mode==='move' ? 'Building Motion Loop' : 'Generating High-Res Asset';
+  let step=0, iv=null;
+  if(meta.mode!=='move'){
+    document.getElementById('procStep').textContent=STEPS[0];
+    iv=setInterval(()=>{ if(step<STEPS.length-1) document.getElementById('procStep').textContent=STEPS[++step]; },2200);
+  }else{
+    document.getElementById('procStep').textContent='Preparing motion frames…';
+  }
 
   try{
-    let prompt = buildPrompt(meta);
-    if(S.anthropicKey){
-      try{ document.getElementById('procStep').textContent='Tightening prompt with Claude…'; prompt = await buildClaudePrompt(prompt, meta); }
-      catch(err){ console.warn('Claude prompt failed, using local:',err); }
-    }
-    let image = await callGemini(prompt, meta);
-
-    // RENDER mode -> extract true transparency (flat white -> alpha)
-    if(meta.mode==='render'){
-      document.getElementById('procStep').textContent='Extracting transparency…';
-      try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
+    let image;
+    if(meta.mode==='move'){
+      image = await generateMove(meta);
+    }else{
+      let prompt = buildPrompt(meta);
+      if(S.anthropicKey){
+        try{ document.getElementById('procStep').textContent='Tightening prompt with Claude…'; prompt = await buildClaudePrompt(prompt, meta); }
+        catch(err){ console.warn('Claude prompt failed, using local:',err); }
+      }
+      image = await callGemini(prompt, meta);
+      // RENDER mode -> extract true transparency (flat white -> alpha)
+      if(meta.mode==='render'){
+        document.getElementById('procStep').textContent='Extracting transparency…';
+        try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
+      }
     }
 
     const render = {
@@ -734,7 +802,7 @@ async function generate(){
     await saveToCatalog(render);
     showResult(render);
     renderTray();
-    toast('Render complete');
+    toast(meta.mode==='move'?'Move loop complete':'Render complete');
   }catch(err){
     const msg = err?.message||'';
     const is429 = msg.includes('429')||msg.toLowerCase().includes('quota')||msg.toLowerCase().includes('resource_exhausted');
@@ -751,8 +819,10 @@ function setProcessing(on){
   document.getElementById('proc').classList.toggle('hidden',!on);
   document.getElementById('placeholder').classList.toggle('hidden', on || !!S.current);
   document.getElementById('result').classList.toggle('hidden', on || !S.current);
+  document.getElementById('infoBar').classList.toggle('hidden', on || !S.current);
   const btn=document.getElementById('genBtn'); btn.disabled=on;
-  document.getElementById('genLabel').textContent = on?'Rendering asset…':'Create 3D Render';
+  const move = S.mode==='move';
+  document.getElementById('genLabel').textContent = on ? (move?'Building loop…':'Rendering asset…') : (move?'Create Move Loop':'Create 3D Render');
   document.getElementById('genIcon').classList.toggle('spin',on);
   if(on){
     document.getElementById('genIcon').innerHTML='<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>';
@@ -769,13 +839,119 @@ function showResult(render){
   res.classList.remove('hidden');
   res.classList.toggle('transparent', render.transparent);
   document.getElementById('resultImg').src=render.image;
-  document.getElementById('metaOverlay').innerHTML = `
-    <div class="meta-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
-    <div class="meta-tags">
-      <span class="tag">${esc(render.meta.category)}</span>
+  const bar=document.getElementById('infoBar');
+  bar.classList.remove('hidden');
+  const mode=render.meta.mode;
+  const modeTag = mode==='render' ? '<span class="tag">TRANSPARENT</span>'
+                : mode==='move'  ? '<span class="tag move">MOVE · LOOP</span>'
+                :                  '<span class="tag">ON MODEL</span>';
+  bar.innerHTML = `
+    <div class="ib-name"><div class="k">Style Name &amp; Color</div><div class="v">${esc(render.styleName)}</div></div>
+    <div class="ib-tags">
+      <span class="tag dim">${esc(render.meta.category)}</span>
       <span class="tag dim">${esc(render.meta.fabric)}</span>
-      <span class="tag dim">${render.transparent?'TRANSPARENT':'ON MODEL'}</span>
+      ${modeTag}
     </div>`;
+}
+
+// =====================================================================
+// MOVE — short looping cinemagraph (a few on-model frames -> animated GIF)
+// On-model only. Each frame reuses the first frame (and the previous one)
+// as visual anchors so the model/garment/background stay consistent.
+// =====================================================================
+const MOVE_PHASES = [
+  'the very start of the motion',
+  'just beginning to move',
+  'mid-motion, weight shifting',
+  'past the midpoint of the motion',
+  'near the end of the motion, already easing back toward the starting pose for a seamless loop'
+];
+
+async function generateMove(meta){
+  const N = Math.max(3, Math.min(6, meta.frames||5));
+  const motion = meta.motion || 'Walking toward the camera';
+  const FW = 480, FH = 640;                 // uniform GIF frame size (3:4)
+  const base = buildPrompt({ ...meta, mode:'move' }); // on-model rules
+
+  const frameSrcs = [];
+  let anchor0 = null;
+  for(let i=0;i<N;i++){
+    document.getElementById('procStep').textContent = `Rendering frame ${i+1} of ${N}…`;
+    const phase = MOVE_PHASES[Math.round((i/(N-1))*(MOVE_PHASES.length-1))];
+    const framePrompt =
+`${base}
+
+ANIMATION FRAME ${i+1} OF ${N} — a single frame from a short, looping cinemagraph of the model: ${motion}.
+HARD CONSISTENCY (identical across every frame): the SAME model (same face, hairstyle, body, skin tone), the SAME ${meta.category} in the exact same colorway and fabric, the SAME background and location, the SAME camera distance, lens and framing, and the SAME lighting.
+ONLY the pose/motion changes: advance to ${phase}. The sequence must loop seamlessly — frame ${N} should flow naturally back into frame 1.
+Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4 portrait.`;
+
+    const extra = [];
+    if(anchor0) extra.push(anchor0);
+    const prev = frameSrcs[frameSrcs.length-1];
+    if(prev && prev!==anchor0) extra.push(prev);
+
+    const img = await callGemini(framePrompt, meta, 0, extra);
+    frameSrcs.push(img);
+    if(i===0) anchor0 = img;
+  }
+
+  document.getElementById('procStep').textContent = 'Assembling looping GIF…';
+  const canvases = [];
+  for(const src of frameSrcs){ canvases.push(await normFrame(src, FW, FH)); }
+  const delay = Math.max(120, Math.round(1200/N)); // ~1.2s total loop
+  const blob = await framesToGif(canvases, delay);
+  return await blobToDataURL(blob);
+}
+
+function loadImg(src){
+  return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('Frame failed to load')); im.src=src; });
+}
+// center-crop (cover) each frame onto a uniform canvas so the GIF is consistent
+async function normFrame(src, FW, FH){
+  const im = await loadImg(src);
+  const c = document.createElement('canvas'); c.width=FW; c.height=FH;
+  const ctx = c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,FW,FH);
+  const ir = im.width/im.height, fr = FW/FH;
+  let sw, sh, sx, sy;
+  if(ir>fr){ sh=im.height; sw=sh*fr; sx=(im.width-sw)/2; sy=0; }
+  else     { sw=im.width;  sh=sw/fr; sx=0; sy=(im.height-sh)/2; }
+  ctx.drawImage(im, sx, sy, sw, sh, 0, 0, FW, FH);
+  return c;
+}
+function blobToDataURL(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result); r.onerror=()=>rej(new Error('GIF encode failed')); r.readAsDataURL(blob); });
+}
+
+// Lazy-load gif.js (encoder + worker) from CDN on first Move render.
+let _gifWorkerUrl = null;
+function ensureGif(){
+  if(_gifWorkerUrl) return Promise.resolve(_gifWorkerUrl);
+  _gifWorkerUrl = (async()=>{
+    if(typeof window.GIF === 'undefined'){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';
+        s.onload=res; s.onerror=()=>rej(new Error('Could not load the GIF encoder (check your connection).'));
+        document.head.appendChild(s);
+      });
+    }
+    // Load the worker as a same-origin blob so it runs without cross-origin issues.
+    const r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+    if(!r.ok) throw new Error('Could not load the GIF worker.');
+    return URL.createObjectURL(await r.blob());
+  })();
+  return _gifWorkerUrl;
+}
+async function framesToGif(canvases, delay){
+  const workerUrl = await ensureGif();
+  return new Promise((res,rej)=>{
+    const gif = new window.GIF({ workers:2, quality:10, width:canvases[0].width, height:canvases[0].height, workerScript:workerUrl, repeat:0 });
+    canvases.forEach(c=>gif.addFrame(c,{ delay, copy:true }));
+    gif.on('finished', blob=>res(blob));
+    gif.on('abort', ()=>rej(new Error('GIF rendering was aborted')));
+    gif.render();
+  });
 }
 
 // =====================================================================
@@ -858,8 +1034,9 @@ async function removeBg(b64){
 // EXPORT — filename rule, download, share, batch
 // =====================================================================
 function buildFilename(styleName, meta){
+  const ext = meta.mode==='move' ? 'gif' : 'png';
   const parts=[styleName, meta.category, meta.fabric, meta.fit].filter(Boolean).map(s=>String(s).toUpperCase());
-  return parts.join(' - ').replace(/%/g,'PCT').replace(/[\\/:*?"<>|]/g,'') + '.png';
+  return parts.join(' - ').replace(/%/g,'PCT').replace(/[\\/:*?"<>|]/g,'') + '.' + ext;
 }
 function dlImage(dataUrl, filename){
   const a=document.createElement('a'); a.href=dataUrl; a.download=filename;
@@ -873,7 +1050,8 @@ async function shareRender(r){
   try{
     if(navigator.canShare){
       const blob=await (await fetch(r.image)).blob();
-      const file=new File([blob], r.filename, {type:'image/png'});
+      const mime=r.meta&&r.meta.mode==='move'?'image/gif':'image/png';
+      const file=new File([blob], r.filename, {type:mime});
       if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
     }
     if(navigator.share){ await navigator.share({title:`RD Style: ${r.styleName}`,text:`3D render — ${r.styleName}`}); return; }
@@ -918,6 +1096,8 @@ function loadIntoForm(r){
   document.getElementById('notes').value=r.meta.notes||'';
   S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
+  if(r.meta.motion) document.getElementById('moveMotion').value=r.meta.motion;
+  if(r.meta.frames) document.getElementById('moveFrames').value=String(r.meta.frames);
   if(r.meta.model){ document.getElementById('mGender').value=r.meta.model.gender||'Male'; document.getElementById('mAge').value=r.meta.model.age||'25-30'; document.getElementById('mEthnicity').value=r.meta.model.ethnicity||''; document.getElementById('mSkin').value=r.meta.model.skin||''; document.getElementById('mHair').value=r.meta.model.hair||''; }
 }
 function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); switchTab('studio'); generate(); }
@@ -952,7 +1132,7 @@ function deleteRender(id){
   if(DB){ const tx=DB.transaction('renders','readwrite'); tx.objectStore('renders').delete(id); }
   S.catalog=S.catalog.filter(r=>r.id!==id);
   S.session=S.session.filter(r=>r.id!==id);
-  if(S.current&&S.current.id===id){ S.current=null; document.getElementById('result').classList.add('hidden'); document.getElementById('placeholder').classList.remove('hidden'); }
+  if(S.current&&S.current.id===id){ S.current=null; document.getElementById('result').classList.add('hidden'); document.getElementById('infoBar').classList.add('hidden'); document.getElementById('placeholder').classList.remove('hidden'); }
   updateCounts(); renderCatalog(); renderTray();
 }
 function updateCounts(){
@@ -992,7 +1172,7 @@ function renderCatalog(){
       </div>
       <div class="cat-info">
         <div class="row"><span class="nm">${esc(r.styleName)}</span><span class="dt">${new Date(r.timestamp).toLocaleDateString()}</span></div>
-        <div class="sub">${esc(r.meta.category)} · ${esc(r.meta.fabric)} · ${r.transparent?'Transparent':'On Model'}</div>
+        <div class="sub">${esc(r.meta.category)} · ${esc(r.meta.fabric)} · ${r.meta.mode==='move'?'Move · Loop':(r.transparent?'Transparent':'On Model')}</div>
       </div>
     </div>`).join('')}</div>`;
 }
