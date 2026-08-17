@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.3</title>
+<title>RD STYLE AI STUDIO — V2.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -81,6 +81,10 @@ select.select option{background:#0d0d0d}
 .upload-zone:hover{border-color:rgba(255,255,255,0.3);color:#fff}
 .upload-zone svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
 .upload-zone span{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase}
+.uz-hint{font-family:var(--font-mono);font-size:8px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:#555;margin-top:-4px}
+#refSlot.drag-over{outline:2px dashed rgba(255,255,255,0.45);outline-offset:3px;border-radius:14px}
+#refSlot.drag-over .upload-zone{border-color:rgba(255,255,255,0.5);color:#fff;background:rgba(255,255,255,0.09)}
+#refSlot.drag-over .ref-preview{filter:brightness(0.7)}
 .ref-preview{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);aspect-ratio:16/10}
 .ref-preview img{width:100%;height:100%;object-fit:cover}
 .ref-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--danger);display:flex;align-items:center;justify-content:center;transition:transform .15s}
@@ -268,7 +272,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.3</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.4</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -319,6 +323,7 @@ select.select option{background:#0d0d0d}
           <button class="upload-zone" onclick="document.getElementById('refFile').click()">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <span>Add Reference Image</span>
+            <span class="uz-hint">Drag &amp; drop or click to browse</span>
           </button>
           <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>
         </div>
@@ -674,6 +679,7 @@ function init(){
   applyConfigDom();           // restore fabric + model fields (DOM must exist first)
   setMode(S.mode);            // sync section visibility to the restored mode
   wireConfigPersist();        // save settings whenever they change
+  initRefDnD();               // enable drag-and-drop on the reference slot
   renderModelLock();
   renderGarmentLock();
   updateKeyDot();
@@ -862,12 +868,41 @@ function refreshSpecUI(){
   document.getElementById('specAR').textContent=nearestAspectRatio(S.spec.width,S.spec.height);
   document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()}`;
 }
-function handleRef(e){
-  const file = e.target.files?.[0]; if(!file) return;
+function handleRef(e){ processRefFile(e.target.files?.[0]); }
+// Shared by click-upload and drag-and-drop.
+function processRefFile(file){
+  if(!file) return;
+  if(!/^image\//.test(file.type||'')){ toast('Please use an image file','err'); return; }
   autofillFromFilename(file.name);
   const reader = new FileReader();
   reader.onloadend = ()=>{ S.refImage = reader.result; showRefPreview(); };
+  reader.onerror = ()=>toast('Could not read that image','err');
   reader.readAsDataURL(file);
+}
+// Drag-and-drop onto the reference slot (works over the empty zone or an
+// existing preview). Handlers live on the persistent #refSlot, not the
+// button that gets swapped out by showRefPreview()/clearRef().
+function initRefDnD(){
+  const slot=document.getElementById('refSlot'); if(!slot) return;
+  ['dragenter','dragover'].forEach(ev=>slot.addEventListener(ev,e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(e.dataTransfer) e.dataTransfer.dropEffect='copy';
+    slot.classList.add('drag-over');
+  }));
+  slot.addEventListener('dragleave',e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(slot.contains(e.relatedTarget)) return;   // still inside — ignore
+    slot.classList.remove('drag-over');
+  });
+  slot.addEventListener('drop',e=>{
+    e.preventDefault(); e.stopPropagation();
+    slot.classList.remove('drag-over');
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    processRefFile(file);
+  });
+  // Prevent a missed drop elsewhere from navigating the browser to the file.
+  window.addEventListener('dragover',e=>{ e.preventDefault(); });
+  window.addEventListener('drop',e=>{ e.preventDefault(); });
 }
 // Parse "STYLE - COLOR NAME - COLOR CODE - FABRIC CONTENT" from an uploaded
 // filename and fill any EMPTY fields. Requires spaced hyphens so hyphenated
@@ -904,6 +939,7 @@ function clearRef(){
     <button class="upload-zone" onclick="document.getElementById('refFile').click()">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>Add Reference Image</span>
+      <span class="uz-hint">Drag &amp; drop or click to browse</span>
     </button>
     <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>`;
 }
