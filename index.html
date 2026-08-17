@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V1.9</title>
+<title>RD STYLE AI STUDIO — V2.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -27,7 +27,6 @@ a{color:var(--info)}
 .hidden{display:none!important}
 .font-serif{font-family:var(--font-display)}
 .mono{font-family:var(--font-mono)}
-
 /* HEADER */
 .header{position:sticky;top:0;z-index:50;background:rgba(10,10,10,0.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{display:flex;align-items:center;gap:12px}
@@ -46,7 +45,6 @@ a{color:var(--info)}
 .hbtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 .key-dot{width:6px;height:6px;border-radius:50%;background:var(--danger)}
 .key-dot.ok{background:var(--good)}
-
 /* UPLOAD / WELCOME SCREEN */
 .welcome{max-width:680px;width:100%;margin:0 auto;padding:72px 24px 40px;text-align:center}
 .welcome-hero{font-family:var(--font-display);font-size:clamp(40px,7vw,84px);font-weight:900;letter-spacing:0.02em;line-height:0.95;text-transform:uppercase;margin-bottom:18px}
@@ -54,13 +52,11 @@ a{color:var(--info)}
 .start-btn{background:#fff;color:#000;font-weight:700;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;padding:16px 40px;border-radius:12px;transition:all .2s}
 .start-btn:hover{background:#e5e5e5}
 .welcome-note{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:22px;opacity:.7}
-
 /* APP LAYOUT */
 .app{display:none;flex:1;flex-direction:column;height:calc(100vh - 60px);overflow:hidden}
 .app.active{display:flex}
 .studio-wrap{flex:1;display:flex;flex-direction:row;overflow:hidden}
 @media(max-width:900px){.studio-wrap{flex-direction:column}}
-
 /* SIDEBAR */
 .sidebar{width:400px;flex-shrink:0;border-right:1px solid var(--line);padding:28px;overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;gap:30px}
 @media(max-width:900px){.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line)}}
@@ -99,7 +95,6 @@ select.select option{background:#0d0d0d}
 .generate-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
 .spin{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 /* STAGE */
 .stage-col{flex:1;display:flex;flex-direction:column;background:var(--stage);overflow:hidden}
 .stage{flex:1;padding:32px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
@@ -132,7 +127,6 @@ select.select option{background:#0d0d0d}
 .act-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
 .act-primary{background:#fff;color:#000}.act-primary:hover{background:#e5e5e5}
 .act-ghost{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);border:1px solid var(--line);color:#fff}.act-ghost:hover{background:rgba(255,255,255,0.2)}
-
 /* STAGE INNER + INFO BAR (details now sit ABOVE the image, not over it) */
 .stage-inner{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:560px}
 .info-bar{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;animation:barin .25s ease}
@@ -154,11 +148,9 @@ select.select option{background:#0d0d0d}
 .mini-pill{background:rgba(255,255,255,0.1);border:1px solid var(--line);color:#fff;font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:7px 12px;border-radius:999px;cursor:pointer;flex-shrink:0;transition:background .15s}
 .mini-pill:hover:not(:disabled){background:rgba(255,255,255,0.2)}
 .mini-pill:disabled{opacity:0.4;cursor:not-allowed}
-
 /* 3-up mode picker */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .grid3 .choice{padding:13px 10px;font-size:11px}
-
 /* TRAY */
 .tray{height:200px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column}
 .tray-head{padding:11px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--fill)}
@@ -182,7 +174,6 @@ select.select option{background:#0d0d0d}
 .mini-btn:hover{background:#fff}
 .mini-btn:hover svg{stroke:#000}
 .mini-btn svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;display:block}
-
 /* CATALOG */
 .catalog{display:none;flex:1;overflow-y:auto;padding:40px}
 .catalog.active{display:block}
@@ -219,14 +210,12 @@ select.select option{background:#0d0d0d}
 .cat-empty{padding:90px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;border:2px dashed var(--line-soft);border-radius:24px}
 .cat-empty svg{width:54px;height:54px;stroke:rgba(255,255,255,0.12);fill:none;stroke-width:1.5}
 .cat-empty p{color:var(--muted);font-size:11px;letter-spacing:0.18em;text-transform:uppercase}
-
 /* FOOTER */
 .footer{border-top:1px solid var(--line-soft);background:var(--bg);padding:8px 24px;display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;color:#555;flex-shrink:0;text-transform:uppercase}
 .footer .left{display:flex;gap:16px}
 .footer .dot{display:inline-flex;align-items:center;gap:6px}
 .footer .dot i{width:5px;height:5px;border-radius:50%}
 .dot.g i{background:var(--good)}.dot.b i{background:var(--info)}
-
 /* MODALS */
 .modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px}
 .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:460px;width:100%;padding:30px;position:relative}
@@ -256,7 +245,6 @@ select.select option{background:#0d0d0d}
 .rate-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .rate-note{font-size:11px;line-height:1.6;color:var(--muted);margin-bottom:16px}
 .rate-skip{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#fff;text-decoration:underline;display:block;margin:0 auto}
-
 /* TOAST */
 .toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none}
 .toast{background:#161616;border:1px solid var(--line);border-radius:12px;padding:12px 20px;font-size:12px;letter-spacing:0.04em;box-shadow:0 12px 30px rgba(0,0,0,0.5);animation:toastin .25s ease;display:flex;align-items:center;gap:10px}
@@ -267,13 +255,12 @@ select.select option{background:#0d0d0d}
 </style>
 </head>
 <body>
-
 <!-- HEADER -->
 <header class="header">
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V1.9</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.1</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -285,7 +272,6 @@ select.select option{background:#0d0d0d}
     <button class="hbtn" onclick="showSettings()"><span class="key-dot" id="keyDot"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
   </div>
 </header>
-
 <!-- WELCOME -->
 <div class="welcome" id="welcome">
   <h1 class="welcome-hero">Render the<br>Collection</h1>
@@ -293,7 +279,6 @@ select.select option{background:#0d0d0d}
   <button class="start-btn" onclick="enterApp()">Enter Studio</button>
   <p class="welcome-note">Bring your own Gemini key · Everything stays in your browser</p>
 </div>
-
 <!-- APP -->
 <div class="app" id="app">
   <div class="studio-wrap" id="studioTab">
@@ -320,7 +305,6 @@ select.select option{background:#0d0d0d}
           <b>Auto-filled from filename.</b> <span id="autofillText"></span> Review and edit the fields above, then Create when correct.
         </div>
       </section>
-
       <section>
         <label class="field-label">Source Reference</label>
         <div id="refSlot">
@@ -332,7 +316,6 @@ select.select option{background:#0d0d0d}
         </div>
         <div id="garmentLockPanel" style="margin-top:14px"></div>
       </section>
-
       <section>
         <label class="field-label">Render Mode</label>
         <div class="grid3" id="modeGroup">
@@ -347,7 +330,6 @@ select.select option{background:#0d0d0d}
           <b>Move.</b> On-model only. Creates short motion clips for social and web — choose the <b>Cinematic</b> engine for a real MP4 (fluid, paid Veo) or <b>Quick</b> for a free animated-GIF preview.
         </div>
       </section>
-
       <section id="modelConfig" class="hidden">
         <label class="field-label">Model Configuration</label>
         <div id="modelLockPanel" style="margin-bottom:16px"></div>
@@ -373,8 +355,12 @@ select.select option{background:#0d0d0d}
             <input type="text" class="text-input" id="mHair" placeholder="e.g. Chestnut Brown"/>
           </div>
         </div>
+        <div style="margin-top:16px">
+          <label class="sub-label">Camera Angle</label>
+          <div class="pill-row" id="angleGroup"></div>
+          <div class="note-box" id="angleNote" style="margin-top:10px">Choose the shot angle for this render. Generate one angle at a time — lock the model first to keep the same person across Front, Back and other angles.</div>
+        </div>
       </section>
-
       <section id="moveConfig" class="hidden">
         <label class="field-label">Motion Engine</label>
         <div class="pill-row" id="moveEngineGroup" style="margin-bottom:16px">
@@ -407,12 +393,10 @@ select.select option{background:#0d0d0d}
           <b>Cinematic.</b> Generates an On-Model still, then animates it into a real ~8&nbsp;second 1080p MP4 with Veo 3.1 Fast — fluid, photoreal motion. <b>Requires a paid-tier Gemini key</b> (Veo has no free tier) and costs roughly $0.80–$1.20 per clip. Takes 1–2&nbsp;minutes.
         </div>
       </section>
-
       <section>
         <label class="field-label">Garment Category</label>
         <div class="grid2" id="catGroup"></div>
       </section>
-
       <section>
         <label class="field-label">Material &amp; Style</label>
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -431,12 +415,10 @@ select.select option{background:#0d0d0d}
           </div>
         </div>
       </section>
-
       <section>
         <label class="field-label">Additional Art Direction</label>
         <textarea id="notes" class="textarea" placeholder="e.g. Include subtle horn buttons, show interior lining texture, contrast topstitching…"></textarea>
       </section>
-
       <section id="outputSizeSection">
         <label class="field-label">Output Size</label>
         <div style="margin-bottom:14px">
@@ -478,13 +460,11 @@ select.select option{background:#0d0d0d}
         </div>
         <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>).</div>
       </section>
-
       <button class="generate-btn" id="genBtn" onclick="generate()">
         <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span id="genLabel">Create 3D Render</span>
       </button>
     </aside>
-
     <!-- STAGE -->
     <div class="stage-col">
       <div class="stage">
@@ -514,7 +494,6 @@ select.select option{background:#0d0d0d}
           </div>
         </div>
       </div>
-
       <!-- TRAY -->
       <div class="tray">
         <div class="tray-head">
@@ -527,7 +506,6 @@ select.select option{background:#0d0d0d}
       </div>
     </div>
   </div>
-
   <!-- CATALOG -->
   <div class="catalog" id="catalogTab">
     <div class="cat-inner">
@@ -548,16 +526,14 @@ select.select option{background:#0d0d0d}
     </div>
   </div>
 </div>
-
 <!-- FOOTER -->
 <footer class="footer">
   <div class="left">
     <span class="dot g"><i></i>Engine Active</span>
-    <span class="dot b"><i></i>Gemini 2.5 Flash · Veo 3.1</span>
+    <span class="dot b"><i></i>Gemini 3.1 Flash · Veo 3.1</span>
   </div>
   <div>© 2026 RD Style AI Studio · Vault Synced Locally</div>
 </footer>
-
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay hidden" id="settingsModal">
   <div class="modal-box">
@@ -591,7 +567,6 @@ select.select option{background:#0d0d0d}
     <p class="modal-foot">Keys stored locally in your browser only · never uploaded</p>
   </div>
 </div>
-
 <!-- RATE LIMIT MODAL -->
 <div class="modal-overlay hidden" id="rateModal">
   <div class="modal-box" style="max-width:420px">
@@ -606,9 +581,7 @@ select.select option{background:#0d0d0d}
     <button class="rate-skip" onclick="hideRate()">Skip and close →</button>
   </div>
 </div>
-
 <div class="toast-wrap" id="toastWrap"></div>
-
 <script>
 "use strict";
 // =====================================================================
@@ -617,13 +590,13 @@ select.select option{background:#0d0d0d}
 // flat-white render -> client-side flood-fill transparency, 429 backoff.
 // Persistence: IndexedDB catalog vault + localStorage for keys/prefs.
 // =====================================================================
-
 const CATEGORIES = ['Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
-const GEMINI_MODEL = 'gemini-2.5-flash-image';
+// Camera angles for On-Model & Move stills. [id, short button label].
+const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
+const GEMINI_MODEL = 'gemini-3.1-flash-image';       // Nano Banana 2 — 4K, best multi-reference consistency
 const VEO_MODEL = 'veo-3.1-fast-generate-preview';   // image-to-video, Fast tier
 const VEO_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-
 // ---------------------------------------------------------------------
 // CUSTOMER OUTPUT PRESETS  (Phase 2 lives here)
 // To add a customer's image guideline, add an object to this array. Each
@@ -640,13 +613,11 @@ const CUSTOMER_PRESETS = [
   { name:'Marketplace · 2048×2048 JPEG (white)',   width:2048, height:2048, fit:'contain', bg:'white',       format:'jpeg', quality:0.90 },
   { name:'Social Vertical · 1080×1350 JPEG',       width:1080, height:1350, fit:'cover',   bg:'white',       format:'jpeg', quality:0.90 },
 ];
-
-// Aspect ratios Gemini 2.5 Flash Image can be steered to (label -> w/h).
+// Aspect ratios Gemini 3.1 Flash Image (Nano Banana 2) can be steered to (label -> w/h).
 const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4',5/4],['1:1',1],['4:5',4/5],['3:4',3/4],['2:3',2/3],['9:16',9/16]];
-
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
-  mode:'render', category:'Outerwear', fit:'Slim',
+  mode:'render', category:'Outerwear', fit:'Slim', angle:'front',
   moveEngine:'veo',
   refImage:null,
   lockedModel:null,        // { image, label } — reused as identity reference
@@ -657,7 +628,6 @@ const S = {
   catalog:[],            // persisted renders (newest first)
   processing:false,
 };
-
 // ---------- INIT ----------
 function init(){
   S.apiKey = localStorage.getItem('rd_gemini_key') || '';
@@ -669,6 +639,7 @@ function init(){
   if(lg) S.lockedGarment = { image:lg, label: localStorage.getItem('rd_locked_garment_label')||'Garment' };
   buildCategoryButtons();
   buildFitButtons();
+  buildAngleButtons();
   buildFilterCategories();
   buildPresetOptions();
   refreshSpecUI();
@@ -678,7 +649,6 @@ function init(){
   updateKeyDot();
   openDB().then(loadCatalog);
 }
-
 function buildCategoryButtons(){
   const wrap = document.getElementById('catGroup');
   wrap.innerHTML = CATEGORIES.map(c=>`
@@ -690,18 +660,22 @@ function buildFitButtons(){
   document.getElementById('fitGroup').innerHTML = FITS.map(f=>`
     <button class="pill ${f===S.fit?'active':''}" data-fit="${f}" onclick="setFit('${f}')">${f}</button>`).join('');
 }
+function buildAngleButtons(){
+  const el = document.getElementById('angleGroup'); if(!el) return;
+  el.innerHTML = ANGLES.map(([id,label])=>`
+    <button class="pill ${id===S.angle?'active':''}" data-angle="${id}" onclick="setAngle('${id}')">${label}</button>`).join('');
+}
+function angleLabel(id){ const a=ANGLES.find(x=>x[0]===id); return a?a[1]:'Front'; }
 function buildFilterCategories(){
   const sel = document.getElementById('filterCat');
   sel.innerHTML = '<option value="">All Categories</option>' + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
-
 function enterApp(){
   if(!S.apiKey){ showSettings(); toast('Add your Gemini API key to begin','err'); return; }
   document.getElementById('welcome').style.display='none';
   document.getElementById('app').classList.add('active');
   document.getElementById('navBar').style.display='flex';
 }
-
 // ---------- TABS ----------
 function switchTab(tab){
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -709,7 +683,6 @@ function switchTab(tab){
   document.getElementById('catalogTab').classList.toggle('active',tab==='catalog');
   if(tab==='catalog') renderCatalog();
 }
-
 // ---------- CONTROL SETTERS ----------
 function setMode(m){
   S.mode=m;
@@ -735,10 +708,9 @@ function setMoveEngine(e){
 }
 function setCategory(c){ S.category=c; buildCategoryButtons(); }
 function setFit(f){ S.fit=f; buildFitButtons(); }
-
+function setAngle(a){ S.angle=a; buildAngleButtons(); }
 // ---------- OUTPUT SPEC (size / fit / format) ----------
 function clampInt(v,min,max,dflt){ const n=parseInt(v,10); if(isNaN(n))return dflt; return Math.max(min,Math.min(max,n)); }
-
 function buildPresetOptions(){
   const sel=document.getElementById('presetSel');
   sel.innerHTML='<option value="custom">Custom</option>'+CUSTOMER_PRESETS.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
@@ -750,7 +722,6 @@ function applyPreset(v){
   refreshSpecUI();
 }
 function markCustom(){ const sel=document.getElementById('presetSel'); if(sel) sel.value='custom'; }
-
 function setFitMode(v){ S.spec.fit=v; markCustom(); refreshSpecUI(); }
 function setBg(v){ S.spec.bg=v; markCustom(); refreshSpecUI(); }
 function setFormat(v){
@@ -780,7 +751,6 @@ function refreshSpecUI(){
   document.getElementById('specAR').textContent=nearestAspectRatio(S.spec.width,S.spec.height);
   document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()}`;
 }
-
 function handleRef(e){
   const file = e.target.files?.[0]; if(!file) return;
   autofillFromFilename(file.name);
@@ -826,22 +796,32 @@ function clearRef(){
     </button>
     <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>`;
 }
-
 // =====================================================================
 // PROMPT BUILDERS  (render rules ported from SweaterVision)
 // =====================================================================
+// Firm per-angle camera instruction for On-Model & Move stills. Gemini
+// tends to default to a front view, so the back/side wording is emphatic.
+function angleClause(angle){
+  switch(angle){
+    case 'back':
+      return "CAMERA ANGLE — BACK VIEW (MANDATORY): photograph the model from DIRECTLY BEHIND. Show the FULL BACK of the garment — rear panel, back yoke, back collar, rear seams, back pockets and any back detailing must be clearly visible. The model faces AWAY from the camera; the face is NOT visible (only the back of the head and hair). Do NOT show the front of the garment or the chest. This is a rear / back-view shot.";
+    case 'side':
+      return "CAMERA ANGLE — SIDE PROFILE: photograph the model in a full 90° side profile. The side seams, sleeve line, garment depth and drape should read clearly from the side. Not front-facing, not three-quarter.";
+    case 'three-quarter':
+      return "CAMERA ANGLE — THREE-QUARTER: photograph the model at a natural three-quarter turn (roughly 45° between front and side) so both the front and one side of the garment are visible, showing depth and construction.";
+    default:
+      return "CAMERA ANGLE — FRONT VIEW: photograph the model straight-on and front-facing, centered and square to the camera, garment shown clearly from the front.";
+  }
+}
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
   const styleLine = meta.styleName || 'Unnamed garment';
-
   const bgRule = isRender
     ? "GHOST MANNEQUIN BACKGROUND: CRITICAL — the garment MUST float on a 100% PURE FLAT SOLID WHITE background, hex #FFFFFF. NOT off-white, NOT light gray, NOT cream. Exact RGB (255,255,255). ZERO shadows of any kind — no drop shadows, no floor shadows, no ambient occlusion, no vignette, no gradient. The background must be a single uniform flat #FFFFFF value so automated background removal can extract the garment cleanly. Any deviation from pure white will cause extraction failure."
     : "ON-MODEL BACKGROUND: A clean, minimal, professional editorial studio backdrop in a soft neutral tone. Even, high-key lighting. No clutter, no props, no text.";
-
   const styleRule = isRender
     ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
     : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}. Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
-
   const rules = isRender ? [
     bgRule,
     "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no plastic cylinder, no torso form outline, no shoulder supports, no base, no clips, no rods. Only the garment fabric floating in 3D space. The neck opening must be wide, fully open and hollow, showing only the inside back collar.",
@@ -854,27 +834,24 @@ function buildPrompt(meta){
   ] : [
     bgRule,
     styleRule,
+    angleClause(meta.angle),
     "FRAMING: 3:4 portrait crop, garment is the clear focal point, well-lit, no harsh shadows obscuring fabric detail.",
     "NO TAGS OR ARTIFACTS: remove price tags, barcode tags, sizing tags and brand labels from the garment.",
     "PHOTOREALISM: high-end catalog quality, true-to-life proportions, no extra limbs or distortions.",
   ];
-
   const refLine = meta.hasRef ? "REFERENCE IMAGE: the attached image is the design/silhouette reference — match its construction, pattern, drape and color precisely." : "";
   const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
   const fabricStr = meta.fabricContent ? `${meta.fabric} — ${meta.fabricContent}` : meta.fabric;
-
   return `AI FASHION CATALOG ENGINE — produce a premium menswear render.
 STYLE NAME / NUMBER: "${styleLine}"${colorStr?`\nCOLORWAY: ${colorStr}`:''}
 GARMENT CATEGORY: ${meta.category}
 PRIMARY FABRIC: ${fabricStr}   |   FIT: ${meta.fit}
 ART DIRECTION: ${meta.notes || 'Follow the reference and category conventions closely.'}
 ${refLine}
-
 CRITICAL RULES (ABSOLUTE COMPLIANCE — NO EXCEPTIONS):
 ${rules.map((r,i)=>`${i+1}. ${r}`).join('\n')}
 TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: ${colorStr ? `the garment colorway is ${colorStr} — render this exact color faithfully and consistently across the whole garment.` : 'match the colorway named in the style.'} Luxury catalog realism throughout.`;
 }
-
 // Optional: rewrite art direction into a tighter prompt via Claude
 async function buildClaudePrompt(localPrompt, meta){
   const system = `You are an expert fashion AI prompt engineer for menswear e-commerce renders. Rewrite the brief into ONE dense paragraph (max 160 words, no bullets, no line breaks) optimized for Google Gemini image generation. Preserve every hard rule (ghost mannequin vs on-model, pure #FFFFFF background for ghost mannequin, front-facing, 3:4, no tags/hangers, fabric and color fidelity). Be specific about fabric texture and the named colorway.`;
@@ -882,7 +859,7 @@ async function buildClaudePrompt(localPrompt, meta){
   const resp = await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':S.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system,messages:[{role:'user',content:user}]})
+    body:JSON.stringify({model:'claude-sonnet-5',max_tokens:500,system,messages:[{role:'user',content:user}]})
   });
   if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(`Claude ${resp.status}: ${e?.error?.message||resp.statusText}`); }
   const data = await resp.json();
@@ -890,7 +867,6 @@ async function buildClaudePrompt(localPrompt, meta){
   if(!text) throw new Error('Claude returned empty');
   return text;
 }
-
 // =====================================================================
 // GEMINI CALL (REST, with 429 backoff)
 // =====================================================================
@@ -932,17 +908,14 @@ async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false)
   if(txt) throw new Error(`AI returned text instead of an image: ${txt.slice(0,120)}…`);
   throw new Error(`No image returned. Finish reason: ${cand.finishReason||'unknown'}`);
 }
-
 // =====================================================================
 // GENERATE
 // =====================================================================
 const STEPS = ["Analyzing brief…","Interpreting style selection…","Building 3D form…","Rendering studio shot…","Refining textures & lighting…","Removing tags & labels…","Finishing up…"];
-
 async function generate(){
   if(!S.apiKey){ showSettings(); toast('Add your Gemini API key first','err'); return; }
   const styleName = document.getElementById('styleName').value.trim();
   if(!styleName){ toast('Enter a style name or number','err'); return; }
-
   const meta = {
     styleName,
     colorName: document.getElementById('colorName').value.trim(),
@@ -952,6 +925,7 @@ async function generate(){
     fabric: document.getElementById('fabric').value,
     fit: S.fit,
     mode: S.mode,
+    angle: S.angle,
     notes: document.getElementById('notes').value.trim(),
     hasRef: !!S.refImage,
     motion: document.getElementById('moveMotion').value,
@@ -967,7 +941,6 @@ async function generate(){
       hair: document.getElementById('mHair').value.trim(),
     }
   };
-
   const veoMove = (meta.mode==='move' && meta.engine==='veo');
   setProcessing(true);
   document.getElementById('procTitle').textContent = veoMove ? 'Generating Video Clip' : (meta.mode==='move' ? 'Building Motion Loop' : 'Generating High-Res Asset');
@@ -978,7 +951,6 @@ async function generate(){
   }else{
     document.getElementById('procStep').textContent = veoMove ? 'Preparing…' : 'Preparing motion frames…';
   }
-
   try{
     let image, video=null, poster=null, kind='image', ephemeral=false;
     if(meta.mode==='move'){
@@ -1006,7 +978,6 @@ async function generate(){
       document.getElementById('procStep').textContent='Applying output size…';
       image = await fitToSpec(image, meta.spec);
     }
-
     const transparent = (meta.mode==='render' && meta.spec.format!=='jpeg' && meta.spec.bg==='transparent');
     const render = {
       id: crypto.randomUUID(),
@@ -1030,7 +1001,6 @@ async function generate(){
     clearInterval(iv); setProcessing(false);
   }
 }
-
 function setProcessing(on){
   S.processing=on;
   document.getElementById('proc').classList.toggle('hidden',!on);
@@ -1049,7 +1019,6 @@ function setProcessing(on){
     document.getElementById('genIcon').innerHTML='<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>';
   }
 }
-
 function showResult(render){
   S.current=render;
   document.getElementById('placeholder').classList.add('hidden');
@@ -1076,6 +1045,8 @@ function showResult(render){
   const modeTag = mode==='render' ? '<span class="tag">TRANSPARENT</span>'
                 : mode==='move'  ? `<span class="tag move">MOVE · ${isVideo?'MP4':'GIF'}</span>`
                 :                  '<span class="tag">ON MODEL</span>';
+  const angleTag = ((mode==='model'||mode==='move') && render.meta.angle && render.meta.angle!=='front')
+    ? `<span class="tag dim">${angleLabel(render.meta.angle)}</span>` : '';
   const sizeTag = isVideo
     ? `<span class="tag dim">1080p ${veoAspect(render.meta.spec)} MP4</span>`
     : mode==='move'
@@ -1086,27 +1057,23 @@ function showResult(render){
     <div class="ib-tags">
       <span class="tag dim">${esc(render.meta.category)}</span>
       <span class="tag dim">${esc(render.meta.fabric)}</span>
+      ${angleTag}
       ${sizeTag}
       ${modeTag}
     </div>`;
   renderModelLock();
   renderGarmentLock();
 }
-
 // =====================================================================
 // MOVE · CINEMATIC — Veo 3.1 image-to-video (submit -> poll -> download)
 // Generates an On-Model still, then animates THAT exact frame so the
 // garment + model stay identical while the motion is real video.
 // =====================================================================
 function veoAspect(spec){ return (spec && spec.width < spec.height) ? '9:16' : '16:9'; }
-
 const MODEL_LOCK_CLAUSE = `MODEL IDENTITY LOCK: One attached reference image shows the EXACT model to use. Reproduce this same individual precisely — identical face, bone structure, skin tone, hair color and hairstyle, age and body type. Keep the person identical; only the garment (the hero piece described above), pose, camera angle and scene may change. It must read as unmistakably the same person across every shot.`;
-
 function modelLockRefs(){ return S.lockedModel ? [S.lockedModel.image] : []; }
 function garmentLockRefs(){ return S.lockedGarment ? [S.lockedGarment.image] : []; }
-
 const GARMENT_LOCK_CLAUSE = `GARMENT LOCK: One attached reference image shows the EXACT garment to depict. Replicate this same physical product precisely — identical color/colorway, fabric, knit/weave, pattern, panel construction, seams, trims, buttons and proportions — even when shown from a different camera angle. Ignore any person, mannequin or background in that reference; copy only the garment. This must be the same item across every shot.`;
-
 // Combined extra reference images + prompt clause for the locked garment/model.
 function lockExtras(meta){
   const imgs=[]; let clause='';
@@ -1114,7 +1081,6 @@ function lockExtras(meta){
   if(S.lockedModel && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.lockedModel.image); clause += '\n\n'+MODEL_LOCK_CLAUSE; }
   return { imgs, clause };
 }
-
 function renderModelLock(){
   const el=document.getElementById('modelLockPanel');
   if(!el) return;
@@ -1165,7 +1131,6 @@ async function downscaleDataURL(src, max){
   c.getContext('2d').drawImage(im,0,0,w,h);
   return c.toDataURL('image/jpeg',0.9);
 }
-
 function renderGarmentLock(){
   const el=document.getElementById('garmentLockPanel');
   if(!el) return;
@@ -1207,7 +1172,6 @@ function persistGarmentLock(){
   try{ localStorage.setItem('rd_locked_garment', S.lockedGarment.image); localStorage.setItem('rd_locked_garment_label', S.lockedGarment.label||''); }
   catch(e){ toast('Garment locked for this session (too large to save offline)','err'); }
 }
-
 // Lifestyle on-model still for Move — honors Additional Art Direction for scene + styling
 function buildMoveStillPrompt(meta){
   const m = meta.model;
@@ -1217,15 +1181,14 @@ function buildMoveStillPrompt(meta){
     : `Natural real-world lifestyle setting suitable for a fashion campaign.`;
   return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
 MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
+${angleClause(meta.angle)}
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
 }
-
 function buildVeoPrompt(meta){
   const dir = meta.notes ? ` ADDITIONAL DIRECTION (governs scene, styling and action where it differs from the above): ${meta.notes}.` : '';
   return `Animate this exact photograph into a short, photorealistic fashion clip. Keep the SAME model (same face, hair, body) wearing the SAME ${meta.category} — "${meta.styleName}" — with the identical color, fabric and fit. Do not restyle, recolor or swap the garment. Primary motion: ${meta.motion}.${dir} Produce smooth, natural, true-to-life movement with a correct walking gait and weight shift; understated and cinematic. Keep framing stable. No morphing, no warping limbs, no extra people entering frame, no on-screen text, captions, watermarks or logos.`;
 }
-
 async function generateMoveVeo(meta){
   // 1) Lifestyle on-model still to animate (honors art direction + locked model)
   document.getElementById('procStep').textContent='Rendering the on-model still…';
@@ -1234,20 +1197,16 @@ async function generateMoveVeo(meta){
   let stillPrompt = buildMoveStillPrompt(meta) + lockClause;
   const still = await callGemini(stillPrompt, stillMeta, 0, lockImgs);
   const poster = await fitToSpec(still, { ...meta.spec });
-
   // 2) Submit to Veo
   document.getElementById('procStep').textContent='Submitting to Veo…';
   const opName = await veoSubmit(still, buildVeoPrompt(meta), veoAspect(meta.spec));
-
   // 3) Poll until done
   const uri = await veoPoll(opName);
-
   // 4) Download the MP4
   document.getElementById('procStep').textContent='Downloading video…';
   const dl = await veoDownload(uri);
   return { video: dl.url, poster, ephemeral: dl.ephemeral };
 }
-
 async function veoSubmit(imageDataUrl, prompt, aspect){
   const mime = imageDataUrl.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
   const b64 = imageDataUrl.split(',')[1];
@@ -1279,7 +1238,6 @@ async function veoSubmit(imageDataUrl, prompt, aspect){
   }
   throw new Error(lastMsg);
 }
-
 async function veoPoll(opName){
   const start=Date.now(), MAXMS=5*60*1000;
   while(true){
@@ -1299,7 +1257,6 @@ async function veoPoll(opName){
     }
   }
 }
-
 function findVideoUri(obj){
   let found=null;
   (function walk(o){
@@ -1313,7 +1270,6 @@ function findVideoUri(obj){
   })(obj);
   return found;
 }
-
 async function veoDownload(uri){
   let url=uri;
   if(!/[?&]key=/.test(url)) url += (url.includes('?')?'&':'?')+'key='+encodeURIComponent(S.apiKey);
@@ -1328,7 +1284,6 @@ async function veoDownload(uri){
     return { url, ephemeral:true };
   }
 }
-
 // =====================================================================
 // MOVE — short looping cinemagraph (a few on-model frames -> animated GIF)
 // On-model only. Each frame reuses the first frame (and the previous one)
@@ -1341,7 +1296,6 @@ const MOVE_PHASES = [
   'past the midpoint of the motion',
   'near the end of the motion, already easing back toward the starting pose for a seamless loop'
 ];
-
 async function generateMove(meta){
   const N = Math.max(3, Math.min(6, meta.frames||5));
   const motion = meta.motion || 'Walking toward the camera';
@@ -1354,7 +1308,6 @@ async function generateMove(meta){
   const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
   let base = buildMoveStillPrompt(meta) + lockClause;   // honors Additional Art Direction + locks
   const lockRefs = lockImgs;
-
   const frameSrcs = [];
   let anchor0 = null;
   for(let i=0;i<N;i++){
@@ -1362,22 +1315,18 @@ async function generateMove(meta){
     const phase = MOVE_PHASES[Math.round((i/(N-1))*(MOVE_PHASES.length-1))];
     const framePrompt =
 `${base}
-
 ANIMATION FRAME ${i+1} OF ${N} — a single frame from a short, looping cinemagraph of the model: ${motion}.
 HARD CONSISTENCY (identical across every frame): the SAME model (same face, hairstyle, body, skin tone), the SAME ${meta.category} in the exact same colorway and fabric, the SAME background and location, the SAME camera distance, lens and framing, and the SAME lighting.
 ONLY the pose/motion changes: advance to ${phase}. The sequence must loop seamlessly — frame ${N} should flow naturally back into frame 1.
 Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4 portrait.`;
-
     const extra = [...lockRefs];
     if(anchor0) extra.push(anchor0);
     const prev = frameSrcs[frameSrcs.length-1];
     if(prev && prev!==anchor0) extra.push(prev);
-
     const img = await callGemini(framePrompt, meta, 0, extra);
     frameSrcs.push(img);
     if(i===0) anchor0 = img;
   }
-
   document.getElementById('procStep').textContent = 'Assembling looping GIF…';
   const canvases = [];
   for(const src of frameSrcs){ canvases.push(await normFrame(src, FW, FH, spec.fit, padBg)); }
@@ -1385,7 +1334,6 @@ Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4
   const blob = await framesToGif(canvases, delay);
   return await blobToDataURL(blob);
 }
-
 function loadImg(src){
   return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('Frame failed to load')); im.src=src; });
 }
@@ -1422,7 +1370,6 @@ async function fitToSpec(src, spec){
 function blobToDataURL(blob){
   return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result); r.onerror=()=>rej(new Error('GIF encode failed')); r.readAsDataURL(blob); });
 }
-
 // Lazy-load gif.js (encoder + worker) from CDN on first Move render.
 let _gifWorkerUrl = null;
 function ensureGif(){
@@ -1453,7 +1400,6 @@ async function framesToGif(canvases, delay){
     gif.render();
   });
 }
-
 // =====================================================================
 // TRANSPARENCY — safe-zone-aware flood-fill background removal
 // (ported from SweaterVision). Only removes pixels reachable from the
@@ -1467,7 +1413,6 @@ async function removeBg(b64){
         const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
         const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
         const id=ctx.getImageData(0,0,c.width,c.height); const d=id.data; const W=c.width,H=c.height;
-
         // 1. Sample 8 perimeter blocks; brightest = background reference
         function sampleBlock(sx,sy,sz){let r=0,g=0,b=0,n=0;for(let dy=0;dy<sz;dy++)for(let dx=0;dx<sz;dx++){const px=Math.min(W-1,sx+dx),py=Math.min(H-1,sy+dy);const i=(py*W+px)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;}return[r/n,g/n,b/n];}
         const BS=10, hb=Math.floor(BS/2);
@@ -1475,15 +1420,12 @@ async function removeBg(b64){
         let bgR=0,bgG=0,bgB=0,maxBr=-1;
         for(const s of samples){const br=(s[0]+s[1]+s[2])/3;if(br>maxBr){maxBr=br;bgR=s[0];bgG=s[1];bgB=s[2];}}
         const bgBr=(bgR+bgG+bgB)/3;
-
         // 2. Threshold for "is this pixel background-colored?"
         const THR = bgBr>200?42:bgBr>128?38:45;
         const dist=(r,g,b)=>{const dr=r-bgR,dg=g-bgG,db=b-bgB;return Math.sqrt(dr*dr+dg*dg+db*db);};
-
         // 3. Anchor mask — pixels clearly NOT background-colored
         const anchor=new Uint8Array(W*H);
         for(let i=0;i<W*H;i++){const pi=i*4;if(dist(d[pi],d[pi+1],d[pi+2])>THR)anchor[i]=1;}
-
         // 4. Safe zone — BFS from anchors, blocked by bg-like pixels
         const PROP_THR=Math.max(6,THR/5);
         const safe=new Uint8Array(W*H);
@@ -1495,7 +1437,6 @@ async function removeBg(b64){
           if(x>0)nb.push(i-1); if(x<W-1)nb.push(i+1); if(y>0)nb.push(i-W); if(y<H-1)nb.push(i+W);
           for(const ni of nb){ if(safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])>PROP_THR){ safe[ni]=1; queue[qt++]=ni; } }
         }
-
         // 5. Edge-seeded flood fill marks bg pixels, skipping safe zone
         const vis=new Uint8Array(W*H);
         const stack=[]; 
@@ -1507,7 +1448,6 @@ async function removeBg(b64){
           const ns=[]; if(x>0)ns.push(i-1); if(x<W-1)ns.push(i+1); if(y>0)ns.push(i-W); if(y<H-1)ns.push(i+W);
           for(const ni of ns){ if(vis[ni]||safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[ni]=1; stack.push(ni); } }
         }
-
         // 6. Soft 1-pixel feather at boundary, then write alpha
         const alpha=new Float32Array(W*H);
         for(let i=0;i<W*H;i++) alpha[i]=vis[i]?0:1;
@@ -1529,7 +1469,6 @@ async function removeBg(b64){
     img.src=b64;
   });
 }
-
 // =====================================================================
 // EXPORT — filename rule, download, share, batch
 // =====================================================================
@@ -1546,7 +1485,6 @@ function dlImage(dataUrl, filename){
 function dlSource(r){ return (r.kind==='video' && r.video) ? r.video : r.image; }
 function downloadCurrent(){ if(S.current) dlImage(dlSource(S.current), S.current.filename); }
 function downloadRender(id){ const r=findRender(id); if(r) dlImage(dlSource(r), r.filename); }
-
 async function shareCurrent(){ if(S.current) await shareRender(S.current); }
 async function shareRender(r){
   try{
@@ -1571,7 +1509,6 @@ function batchExport(){
   list.forEach((r,i)=> setTimeout(()=>dlImage(dlSource(r), r.filename), i*600));
   toast(`Exporting ${list.length} asset${list.length>1?'s':''}…`);
 }
-
 // =====================================================================
 // SESSION TRAY
 // =====================================================================
@@ -1598,7 +1535,6 @@ function renderTray(){
 function selectRender(id){ const r=findRender(id); if(r){ showResult(r); loadIntoForm(r); renderTray(); } }
 function shareById(id){ const r=findRender(id); if(r) shareRender(r); }
 function findRender(id){ return S.session.find(r=>r.id===id) || S.catalog.find(r=>r.id===id); }
-
 function loadIntoForm(r){
   document.getElementById('styleName').value=r.styleName;
   document.getElementById('colorName').value=r.meta.colorName||'';
@@ -1608,6 +1544,7 @@ function loadIntoForm(r){
   document.getElementById('notes').value=r.meta.notes||'';
   S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
+  setAngle(r.meta.angle||'front');
   if(r.meta.motion) document.getElementById('moveMotion').value=r.meta.motion;
   if(r.meta.engine) setMoveEngine(r.meta.engine);
   if(r.meta.frames) document.getElementById('moveFrames').value=String(r.meta.frames);
@@ -1615,7 +1552,6 @@ function loadIntoForm(r){
   if(r.meta.model){ document.getElementById('mGender').value=r.meta.model.gender||'Male'; document.getElementById('mAge').value=r.meta.model.age||'25-30'; document.getElementById('mEthnicity').value=r.meta.model.ethnicity||''; document.getElementById('mSkin').value=r.meta.model.skin||''; document.getElementById('mHair').value=r.meta.model.hair||''; }
 }
 function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); switchTab('studio'); generate(); }
-
 // =====================================================================
 // CATALOG (IndexedDB persistence)
 // =====================================================================
@@ -1692,7 +1628,6 @@ function renderCatalog(){
     </div>`).join('')}</div>`;
 }
 function openInStudio(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); showResult(r); switchTab('studio'); }
-
 // =====================================================================
 // SETTINGS / RATE LIMIT / TOAST
 // =====================================================================
@@ -1721,7 +1656,6 @@ function refreshClaudeNote(){
 document.addEventListener('input',e=>{ if(e.target&&e.target.id==='anthropicKeyInput') refreshClaudeNote(); });
 function toggleKey(id){ const el=document.getElementById(id); el.type=el.type==='password'?'text':'password'; }
 function updateKeyDot(){ document.getElementById('keyDot').classList.toggle('ok',!!S.apiKey); }
-
 let rateIv=null;
 function showRate(){
   const m=document.getElementById('rateModal'); m.classList.remove('hidden');
@@ -1731,7 +1665,6 @@ function showRate(){
 }
 function hideRate(){ clearInterval(rateIv); document.getElementById('rateModal').classList.add('hidden'); }
 function toggleTimerPref(cb){ S.showTimer=!cb.checked; localStorage.setItem('rd_show_timer',S.showTimer?'true':'false'); }
-
 function toast(msg, type){
   const wrap=document.getElementById('toastWrap');
   const el=document.createElement('div'); el.className='toast'+(type==='err'?' err':'');
@@ -1740,7 +1673,6 @@ function toast(msg, type){
   setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
 }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
 init();
 </script>
 </body>
