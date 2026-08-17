@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.1</title>
+<title>RD STYLE AI STUDIO — V2.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -151,6 +151,14 @@ select.select option{background:#0d0d0d}
 /* 3-up mode picker */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .grid3 .choice{padding:13px 10px;font-size:11px}
+/* BACKDROP SWATCHES */
+.swatch-row{display:flex;flex-wrap:wrap;gap:8px}
+.swatch{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);cursor:pointer;position:relative;padding:0;transition:transform .12s}
+.swatch:hover{transform:scale(1.08)}
+.swatch.active{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #fff}
+.swatch.custom{display:flex;align-items:center;justify-content:center;background:var(--fill);overflow:hidden}
+.swatch.custom input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0}
+.swatch.custom svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:2;pointer-events:none}
 /* TRAY */
 .tray{height:200px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column}
 .tray-head{padding:11px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--fill)}
@@ -260,7 +268,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.1</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.3</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -360,6 +368,15 @@ select.select option{background:#0d0d0d}
           <div class="pill-row" id="angleGroup"></div>
           <div class="note-box" id="angleNote" style="margin-top:10px">Choose the shot angle for this render. Generate one angle at a time — lock the model first to keep the same person across Front, Back and other angles.</div>
         </div>
+        <div id="backdropBlock" style="margin-top:16px">
+          <label class="sub-label">Photoshoot Backdrop Color</label>
+          <div class="swatch-row" id="bgColorSwatches"></div>
+          <div class="pill-row" id="backdropToggles" style="margin-top:12px">
+            <button class="pill" id="naturalLightBtn" onclick="toggleNaturalLight()">Natural Light</button>
+            <button class="pill" id="gradientBtn" onclick="toggleGradient()">Gradient</button>
+          </div>
+          <div class="note-box" id="backdropNote" style="margin-top:10px">Sets the studio background color for On-Model shots. <b>Natural Light</b> adds soft directional daylight; <b>Gradient</b> adds a subtle photographic sweep. Ignored when Output Size background is set to <b>Transparent</b> (the model is cut out instead).</div>
+        </div>
       </section>
       <section id="moveConfig" class="hidden">
         <label class="field-label">Motion Engine</label>
@@ -458,7 +475,7 @@ select.select option{background:#0d0d0d}
             </div>
           </div>
         </div>
-        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>).</div>
+        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>). For On-Model shots, <b>Transparent</b> cuts the model out to alpha; any other setting uses the <b>Photoshoot Backdrop</b> color chosen in Model Configuration.</div>
       </section>
       <button class="generate-btn" id="genBtn" onclick="generate()">
         <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -594,6 +611,12 @@ const CATEGORIES = ['Outerwear','Woven','Knitwear','Denim','Bottoms','Accessorie
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
 const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
+// On-Model photoshoot backdrop swatches. [hex, human label].
+const BACKDROPS = [
+  ['#FFFFFF','White'],['#F3EFE7','Ivory'],['#E7D8C0','Warm Beige'],
+  ['#CBB79A','Sand'],['#BFB9AE','Greige'],['#B9B9B9','Studio Grey'],
+  ['#6E6E6E','Slate'],['#3A3A3A','Charcoal'],['#101010','Black'],
+];
 const GEMINI_MODEL = 'gemini-3.1-flash-image';       // Nano Banana 2 — 4K, best multi-reference consistency
 const VEO_MODEL = 'veo-3.1-fast-generate-preview';   // image-to-video, Fast tier
 const VEO_BASE = 'https://generativelanguage.googleapis.com/v1beta';
@@ -618,6 +641,7 @@ const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4'
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
   mode:'render', category:'Outerwear', fit:'Slim', angle:'front',
+  bgColor:'#FFFFFF', bgColorLabel:'White', naturalLight:false, gradient:false,
   moveEngine:'veo',
   refImage:null,
   lockedModel:null,        // { image, label } — reused as identity reference
@@ -630,6 +654,7 @@ const S = {
 };
 // ---------- INIT ----------
 function init(){
+  S._initing=true;
   S.apiKey = localStorage.getItem('rd_gemini_key') || '';
   S.anthropicKey = localStorage.getItem('rd_anthropic_key') || '';
   S.showTimer = localStorage.getItem('rd_show_timer') !== 'false';
@@ -637,17 +662,77 @@ function init(){
   if(lm) S.lockedModel = { image:lm, label: localStorage.getItem('rd_locked_model_label')||'Model' };
   const lg = localStorage.getItem('rd_locked_garment');
   if(lg) S.lockedGarment = { image:lg, label: localStorage.getItem('rd_locked_garment_label')||'Garment' };
+  loadConfig();               // restore saved Output Size / mode / model settings
   buildCategoryButtons();
   buildFitButtons();
   buildAngleButtons();
+  buildBackdropSwatches();
   buildFilterCategories();
   buildPresetOptions();
   refreshSpecUI();
   setMoveEngine(S.moveEngine);
+  applyConfigDom();           // restore fabric + model fields (DOM must exist first)
+  setMode(S.mode);            // sync section visibility to the restored mode
+  wireConfigPersist();        // save settings whenever they change
   renderModelLock();
   renderGarmentLock();
   updateKeyDot();
+  S._initing=false;
   openDB().then(loadCatalog);
+}
+// ---------- SETTINGS PERSISTENCE (Output Size, mode, model config) ----------
+// Persists the "how I like renders set up" settings so they survive reloads.
+// Per-garment fields (style, colorway, notes) are intentionally NOT saved.
+function saveConfig(){
+  if(S._initing) return;
+  try{
+    const cfg = {
+      spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, moveEngine:S.moveEngine,
+      bgColor:S.bgColor, bgColorLabel:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient,
+      fabric:(document.getElementById('fabric')||{}).value,
+      model:{
+        gender:(document.getElementById('mGender')||{}).value,
+        age:(document.getElementById('mAge')||{}).value,
+        ethnicity:(document.getElementById('mEthnicity')||{}).value,
+        skin:(document.getElementById('mSkin')||{}).value,
+        hair:(document.getElementById('mHair')||{}).value,
+      }
+    };
+    localStorage.setItem('rd_config', JSON.stringify(cfg));
+  }catch(e){ /* storage full / private mode — non-fatal */ }
+}
+function loadConfig(){
+  let cfg=null;
+  try{ cfg=JSON.parse(localStorage.getItem('rd_config')||'null'); }catch(e){ cfg=null; }
+  if(!cfg) return;
+  if(cfg.spec && typeof cfg.spec==='object') S.spec={ ...S.spec, ...cfg.spec };
+  if(cfg.mode) S.mode=cfg.mode;
+  if(cfg.category) S.category=cfg.category;
+  if(cfg.fit) S.fit=cfg.fit;
+  if(cfg.angle) S.angle=cfg.angle;
+  if(cfg.bgColor) S.bgColor=cfg.bgColor;
+  if(cfg.bgColorLabel) S.bgColorLabel=cfg.bgColorLabel;
+  if(typeof cfg.naturalLight==='boolean') S.naturalLight=cfg.naturalLight;
+  if(typeof cfg.gradient==='boolean') S.gradient=cfg.gradient;
+  if(cfg.moveEngine) S.moveEngine=cfg.moveEngine;
+  S._pendingCfg=cfg;   // DOM-bound fields applied once the inputs exist
+}
+function applyConfigDom(){
+  const cfg=S._pendingCfg; if(!cfg) return;
+  if(cfg.fabric){ const f=document.getElementById('fabric'); if(f) f.value=cfg.fabric; }
+  if(cfg.model){
+    const map={mGender:'gender',mAge:'age',mEthnicity:'ethnicity',mSkin:'skin',mHair:'hair'};
+    for(const id in map){ const el=document.getElementById(id); if(el && cfg.model[map[id]]!=null) el.value=cfg.model[map[id]]; }
+  }
+  const nb=document.getElementById('naturalLightBtn'); if(nb) nb.classList.toggle('active',!!S.naturalLight);
+  const gb=document.getElementById('gradientBtn'); if(gb) gb.classList.toggle('active',!!S.gradient);
+  buildBackdropSwatches();
+  delete S._pendingCfg;
+}
+function wireConfigPersist(){
+  ['fabric','mGender','mAge','mEthnicity','mSkin','mHair'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.addEventListener('change', saveConfig);
+  });
 }
 function buildCategoryButtons(){
   const wrap = document.getElementById('catGroup');
@@ -666,6 +751,29 @@ function buildAngleButtons(){
     <button class="pill ${id===S.angle?'active':''}" data-angle="${id}" onclick="setAngle('${id}')">${label}</button>`).join('');
 }
 function angleLabel(id){ const a=ANGLES.find(x=>x[0]===id); return a?a[1]:'Front'; }
+function buildBackdropSwatches(){
+  const wrap=document.getElementById('bgColorSwatches'); if(!wrap) return;
+  const isCustom = !BACKDROPS.some(([hex])=>hex.toLowerCase()===String(S.bgColor).toLowerCase());
+  let html = BACKDROPS.map(([hex,label])=>{
+    const on = !isCustom && hex.toLowerCase()===String(S.bgColor).toLowerCase();
+    return `<button class="swatch ${on?'active':''}" style="background:${hex}" title="${label}" onclick="setBgColor('${hex}','${label}')"></button>`;
+  }).join('');
+  html += `<label class="swatch custom ${isCustom?'active':''}" title="Custom color"${isCustom?` style="background:${esc(S.bgColor)}"`:''}>
+      ${isCustom?'':'<svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="1.4"/><circle cx="12" cy="7" r="1.4"/><circle cx="16" cy="9" r="1.4"/><circle cx="17" cy="13" r="1.4"/><path d="M12 3a9 9 0 1 0 0 18 2 2 0 0 0 2-2 2 2 0 0 1 2-2h1a4 4 0 0 0 4-4 9 9 0 0 0-9-8z"/></svg>'}
+      <input type="color" value="${/^#([0-9a-f]{6})$/i.test(String(S.bgColor))?S.bgColor:'#ffffff'}" oninput="onCustomColor(this.value)"/>
+    </label>`;
+  wrap.innerHTML=html;
+}
+function setBgColor(hex,label){ S.bgColor=hex; S.bgColorLabel=label; buildBackdropSwatches(); saveConfig(); }
+function onCustomColor(hex){ S.bgColor=hex; S.bgColorLabel=customColorLabel(hex); buildBackdropSwatches(); saveConfig(); }
+function customColorLabel(hex){
+  const c=String(hex).replace('#',''); if(c.length<6) return 'custom tone';
+  const r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);
+  const l=(0.2126*r+0.7152*g+0.0722*b)/255;
+  return (l>0.8?'light':l>0.5?'medium':l>0.25?'deep':'dark')+' custom tone';
+}
+function toggleNaturalLight(){ S.naturalLight=!S.naturalLight; const b=document.getElementById('naturalLightBtn'); if(b) b.classList.toggle('active',S.naturalLight); saveConfig(); }
+function toggleGradient(){ S.gradient=!S.gradient; const b=document.getElementById('gradientBtn'); if(b) b.classList.toggle('active',S.gradient); saveConfig(); }
 function buildFilterCategories(){
   const sel = document.getElementById('filterCat');
   sel.innerHTML = '<option value="">All Categories</option>' + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -692,12 +800,14 @@ function setMode(m){
   });
   const usesModel = (m==='model'||m==='move');
   document.getElementById('modelConfig').classList.toggle('hidden',!usesModel);
+  const bdBlock=document.getElementById('backdropBlock'); if(bdBlock) bdBlock.classList.toggle('hidden', m!=='model');
   if(usesModel) renderModelLock();
   document.getElementById('moveConfig').classList.toggle('hidden',m!=='move');
   document.getElementById('renderNote').classList.toggle('hidden',m!=='render');
   document.getElementById('moveNote').classList.toggle('hidden',m!=='move');
   document.getElementById('outputSizeSection').classList.toggle('hidden',m==='move');
   document.getElementById('genLabel').textContent = m==='move' ? (S.moveEngine==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
+  saveConfig();
 }
 function setMoveEngine(e){
   S.moveEngine=e;
@@ -705,10 +815,11 @@ function setMoveEngine(e){
   document.getElementById('framesRow').classList.toggle('hidden', e!=='frames');
   document.getElementById('veoNote').classList.toggle('hidden', e!=='veo');
   document.getElementById('genLabel').textContent = (S.mode==='move') ? (e==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
+  saveConfig();
 }
-function setCategory(c){ S.category=c; buildCategoryButtons(); }
-function setFit(f){ S.fit=f; buildFitButtons(); }
-function setAngle(a){ S.angle=a; buildAngleButtons(); }
+function setCategory(c){ S.category=c; buildCategoryButtons(); saveConfig(); }
+function setFit(f){ S.fit=f; buildFitButtons(); saveConfig(); }
+function setAngle(a){ S.angle=a; buildAngleButtons(); saveConfig(); }
 // ---------- OUTPUT SPEC (size / fit / format) ----------
 function clampInt(v,min,max,dflt){ const n=parseInt(v,10); if(isNaN(n))return dflt; return Math.max(min,Math.min(max,n)); }
 function buildPresetOptions(){
@@ -719,20 +830,20 @@ function applyPreset(v){
   if(v==='custom') return;
   const p=CUSTOMER_PRESETS[+v]; if(!p) return;
   S.spec={ width:p.width, height:p.height, fit:p.fit||'contain', bg:p.bg||'white', format:p.format||'png', quality:p.quality||0.92 };
-  refreshSpecUI();
+  refreshSpecUI(); saveConfig();
 }
 function markCustom(){ const sel=document.getElementById('presetSel'); if(sel) sel.value='custom'; }
-function setFitMode(v){ S.spec.fit=v; markCustom(); refreshSpecUI(); }
-function setBg(v){ S.spec.bg=v; markCustom(); refreshSpecUI(); }
+function setFitMode(v){ S.spec.fit=v; markCustom(); refreshSpecUI(); saveConfig(); }
+function setBg(v){ S.spec.bg=v; markCustom(); refreshSpecUI(); saveConfig(); }
 function setFormat(v){
   S.spec.format=v;
   if(v==='jpeg' && S.spec.bg==='transparent') S.spec.bg='white'; // JPEG has no alpha
-  markCustom(); refreshSpecUI();
+  markCustom(); refreshSpecUI(); saveConfig();
 }
 function onSpecEdit(){
   S.spec.width=clampInt(document.getElementById('specW').value,64,8000,1200);
   S.spec.height=clampInt(document.getElementById('specH').value,64,8000,1600);
-  markCustom(); refreshSpecUI();
+  markCustom(); refreshSpecUI(); saveConfig();
 }
 function nearestAspectRatio(w,h){
   const target=w/h; let best=SUPPORTED_AR[0], bd=Infinity;
@@ -813,12 +924,29 @@ function angleClause(angle){
       return "CAMERA ANGLE — FRONT VIEW: photograph the model straight-on and front-facing, centered and square to the camera, garment shown clearly from the front.";
   }
 }
+// On-Model photoshoot backdrop: color + optional natural light + gradient.
+function backdropClause(meta){
+  const bd = meta.backdrop || { color:'#FFFFFF', label:'White', naturalLight:false, gradient:false };
+  const name = bd.label || 'neutral studio';
+  const light = bd.naturalLight
+    ? "LIGHTING: soft, natural daylight — gentle directional light from one side (like large diffused window light) with organic soft shadows and a natural falloff; warm and lifelike, not a flat studio strobe."
+    : "LIGHTING: even, professional high-key studio lighting — soft and clean with minimal shadows.";
+  const grad = bd.gradient
+    ? `BACKDROP: a ${name} (${bd.color}) seamless studio sweep finished with a smooth, subtle tonal gradient — slightly brighter behind the model, easing gently deeper toward the frame edges, like a professional photography backdrop. Smooth, no banding.`
+    : `BACKDROP: a ${name} (${bd.color}) perfectly uniform, flat seamless studio background — a single even tone.`;
+  return `ON-MODEL BACKDROP: ${grad} ${light} No props, no scenery, no on-image text.`;
+}
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
   const styleLine = meta.styleName || 'Unnamed garment';
+  // On-Model background: Transparent output -> a clean white sweep for a clean
+  // alpha cutout; otherwise honor the chosen Photoshoot Backdrop (color/light/gradient).
+  const cutout = !isRender && meta.spec && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg';
   const bgRule = isRender
     ? "GHOST MANNEQUIN BACKGROUND: CRITICAL — the garment MUST float on a 100% PURE FLAT SOLID WHITE background, hex #FFFFFF. NOT off-white, NOT light gray, NOT cream. Exact RGB (255,255,255). ZERO shadows of any kind — no drop shadows, no floor shadows, no ambient occlusion, no vignette, no gradient. The background must be a single uniform flat #FFFFFF value so automated background removal can extract the garment cleanly. Any deviation from pure white will cause extraction failure."
-    : "ON-MODEL BACKGROUND: A clean, minimal, professional editorial studio backdrop in a soft neutral tone. Even, high-key lighting. No clutter, no props, no text.";
+    : cutout
+      ? "ON-MODEL BACKGROUND: CRITICAL — place the model on a 100% PURE FLAT SOLID WHITE seamless studio background, hex #FFFFFF, exact RGB (255,255,255). NOT off-white, NOT grey, NOT beige. Even, high-key lighting with NO cast shadows on the background — no floor shadow, no drop shadow, no gradient, no vignette. The background must be a single uniform flat #FFFFFF value so it can be isolated cleanly. No props, no scenery, no text."
+      : backdropClause(meta);
   const styleRule = isRender
     ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
     : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}. Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
@@ -926,6 +1054,7 @@ async function generate(){
     fit: S.fit,
     mode: S.mode,
     angle: S.angle,
+    backdrop: { color:S.bgColor, label:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient },
     notes: document.getElementById('notes').value.trim(),
     hasRef: !!S.refImage,
     motion: document.getElementById('moveMotion').value,
@@ -969,16 +1098,18 @@ async function generate(){
       const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
       if(lockClause) prompt += lockClause;
       image = await callGemini(prompt, meta, 0, lockImgs);
-      // RENDER mode -> extract true transparency (flat white -> alpha)
-      if(meta.mode==='render'){
+      // RENDER always, and ON-MODEL when Transparent is selected -> cut to alpha
+      if(meta.mode==='render' || (meta.mode==='model' && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg')){
         document.getElementById('procStep').textContent='Extracting transparency…';
         try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
       }
-      // Enforce the exact customer output size / fit / format
+      // Enforce the exact customer output size / fit / format.
+      // For an On-Model scene (not a cutout), pad with the chosen backdrop color.
       document.getElementById('procStep').textContent='Applying output size…';
-      image = await fitToSpec(image, meta.spec);
+      const onModelScene = (meta.mode==='model' && !(meta.spec.bg==='transparent' && meta.spec.format!=='jpeg'));
+      image = await fitToSpec(image, meta.spec, onModelScene ? meta.backdrop.color : null);
     }
-    const transparent = (meta.mode==='render' && meta.spec.format!=='jpeg' && meta.spec.bg==='transparent');
+    const transparent = ((meta.mode==='render'||meta.mode==='model') && meta.spec.format!=='jpeg' && meta.spec.bg==='transparent');
     const render = {
       id: crypto.randomUUID(),
       styleName, image, video, poster, kind, ephemeral, meta, transparent,
@@ -1351,13 +1482,14 @@ async function normFrame(src, FW, FH, fit='cover', bg='#000000'){
   return c;
 }
 // Finish a still at EXACT pixel dimensions + format (the customer-spec step).
-async function fitToSpec(src, spec){
+async function fitToSpec(src, spec, fillColor){
   try{
     const im = await loadImg(src);
     const W = spec.width, H = spec.height;
     const c = document.createElement('canvas'); c.width=W; c.height=H;
     const ctx = c.getContext('2d');
-    if(spec.format==='jpeg' || spec.bg==='white'){ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H); }
+    const fill = fillColor || ((spec.format==='jpeg' || spec.bg==='white') ? '#ffffff' : null);
+    if(fill){ ctx.fillStyle=fill; ctx.fillRect(0,0,W,H); }
     const ir = im.width/im.height, fr = W/H;
     let dw, dh, dx, dy;
     if(spec.fit==='cover'){ if(ir>fr){ dh=H; dw=dh*ir; } else { dw=W; dh=dw/ir; } }
@@ -1545,6 +1677,13 @@ function loadIntoForm(r){
   S.refImage=r.meta.hasRef?(r.sourceRef||null):null; if(S.refImage)showRefPreview(); else clearRef();
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   setAngle(r.meta.angle||'front');
+  if(r.meta.backdrop){
+    S.bgColor=r.meta.backdrop.color||'#FFFFFF'; S.bgColorLabel=r.meta.backdrop.label||'White';
+    S.naturalLight=!!r.meta.backdrop.naturalLight; S.gradient=!!r.meta.backdrop.gradient;
+    const nb=document.getElementById('naturalLightBtn'); if(nb) nb.classList.toggle('active',S.naturalLight);
+    const gb=document.getElementById('gradientBtn'); if(gb) gb.classList.toggle('active',S.gradient);
+    buildBackdropSwatches();
+  }
   if(r.meta.motion) document.getElementById('moveMotion').value=r.meta.motion;
   if(r.meta.engine) setMoveEngine(r.meta.engine);
   if(r.meta.frames) document.getElementById('moveFrames').value=String(r.meta.frames);
