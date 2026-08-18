@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.4</title>
+<title>RD STYLE AI STUDIO — V2.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -272,7 +272,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.4</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.5</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -479,8 +479,12 @@ select.select option{background:#0d0d0d}
               <button class="pill" data-format="jpeg" onclick="setFormat('jpeg')">JPEG</button>
             </div>
           </div>
+          <div>
+            <label class="sub-label">Print Resolution (DPI)</label>
+            <input type="number" min="72" max="1200" step="1" id="specDpi" class="text-input" value="300" oninput="onDpiEdit()"/>
+          </div>
         </div>
-        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>). For On-Model shots, <b>Transparent</b> cuts the model out to alpha; any other setting uses the <b>Photoshoot Backdrop</b> color chosen in Model Configuration.</div>
+        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG · 300 DPI</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>). For On-Model shots, <b>Transparent</b> cuts the model out to alpha; any other setting uses the <b>Photoshoot Backdrop</b> color chosen in Model Configuration. <b>DPI</b> is print metadata — it sets the physical print size, not pixel count; raise Width/Height for more actual detail.</div>
       </section>
       <button class="generate-btn" id="genBtn" onclick="generate()">
         <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -637,9 +641,9 @@ const VEO_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 //   quality        : 0–1  (JPEG only)
 // ---------------------------------------------------------------------
 const CUSTOMER_PRESETS = [
-  { name:'Lookbook · 1200×1600 PNG (transparent)', width:1200, height:1600, fit:'contain', bg:'transparent', format:'png',  quality:0.92 },
-  { name:'Marketplace · 2048×2048 JPEG (white)',   width:2048, height:2048, fit:'contain', bg:'white',       format:'jpeg', quality:0.90 },
-  { name:'Social Vertical · 1080×1350 JPEG',       width:1080, height:1350, fit:'cover',   bg:'white',       format:'jpeg', quality:0.90 },
+  { name:'Lookbook · 1200×1600 PNG (transparent)', width:1200, height:1600, fit:'contain', bg:'transparent', format:'png',  quality:0.92, dpi:300 },
+  { name:'Marketplace · 2048×2048 JPEG (white)',   width:2048, height:2048, fit:'contain', bg:'white',       format:'jpeg', quality:0.90, dpi:300 },
+  { name:'Social Vertical · 1080×1350 JPEG',       width:1080, height:1350, fit:'cover',   bg:'white',       format:'jpeg', quality:0.90, dpi:72  },
 ];
 // Aspect ratios Gemini 3.1 Flash Image (Nano Banana 2) can be steered to (label -> w/h).
 const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4',5/4],['1:1',1],['4:5',4/5],['3:4',3/4],['2:3',2/3],['9:16',9/16]];
@@ -651,7 +655,7 @@ const S = {
   refImage:null,
   lockedModel:null,        // { image, label } — reused as identity reference
   lockedGarment:null,      // { image, label } — reused as garment reference
-  spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92 },
+  spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92, dpi:300 },
   current:null,          // current preview render object
   session:[],            // in-session renders (newest first)
   catalog:[],            // persisted renders (newest first)
@@ -835,7 +839,7 @@ function buildPresetOptions(){
 function applyPreset(v){
   if(v==='custom') return;
   const p=CUSTOMER_PRESETS[+v]; if(!p) return;
-  S.spec={ width:p.width, height:p.height, fit:p.fit||'contain', bg:p.bg||'white', format:p.format||'png', quality:p.quality||0.92 };
+  S.spec={ width:p.width, height:p.height, fit:p.fit||'contain', bg:p.bg||'white', format:p.format||'png', quality:p.quality||0.92, dpi:p.dpi||300 };
   refreshSpecUI(); saveConfig();
 }
 function markCustom(){ const sel=document.getElementById('presetSel'); if(sel) sel.value='custom'; }
@@ -849,6 +853,10 @@ function setFormat(v){
 function onSpecEdit(){
   S.spec.width=clampInt(document.getElementById('specW').value,64,8000,1200);
   S.spec.height=clampInt(document.getElementById('specH').value,64,8000,1600);
+  markCustom(); refreshSpecUI(); saveConfig();
+}
+function onDpiEdit(){
+  S.spec.dpi=clampInt(document.getElementById('specDpi').value,72,1200,300);
   markCustom(); refreshSpecUI(); saveConfig();
 }
 function nearestAspectRatio(w,h){
@@ -865,8 +873,10 @@ function refreshSpecUI(){
   const wEl=document.getElementById('specW'), hEl=document.getElementById('specH');
   if(document.activeElement!==wEl) wEl.value=S.spec.width;
   if(document.activeElement!==hEl) hEl.value=S.spec.height;
+  const dEl=document.getElementById('specDpi');
+  if(dEl && document.activeElement!==dEl) dEl.value=S.spec.dpi||300;
   document.getElementById('specAR').textContent=nearestAspectRatio(S.spec.width,S.spec.height);
-  document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()}`;
+  document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()} · ${S.spec.dpi||300} DPI`;
 }
 function handleRef(e){ processRefFile(e.target.files?.[0]); }
 // Shared by click-upload and drag-and-drop.
@@ -1532,8 +1542,104 @@ async function fitToSpec(src, spec, fillColor){
     else                  { if(ir>fr){ dw=W; dh=dw/ir; } else { dh=H; dw=dh*ir; } }
     dx=(W-dw)/2; dy=(H-dh)/2;
     ctx.drawImage(im, dx, dy, dw, dh);
-    return spec.format==='jpeg' ? c.toDataURL('image/jpeg', spec.quality||0.9) : c.toDataURL('image/png');
+    const url = spec.format==='jpeg' ? c.toDataURL('image/jpeg', spec.quality||0.9) : c.toDataURL('image/png');
+    return applyDpi(url, spec.dpi||300);
   }catch(e){ console.warn('fitToSpec failed, returning original',e); return src; }
+}
+// =====================================================================
+// PRINT DPI — embed a density value in the exported bytes so files read as
+// print-ready (canvas defaults to 72 DPI). Pixel count is unchanged; this
+// only tags the intended physical print size. PNG -> pHYs chunk; JPEG ->
+// JFIF APP0 density. Any failure returns the original data URL untouched.
+// =====================================================================
+function _dataURLToBytes(dataUrl){
+  const i=dataUrl.indexOf(','); const bin=atob(dataUrl.slice(i+1));
+  const bytes=new Uint8Array(bin.length);
+  for(let j=0;j<bin.length;j++) bytes[j]=bin.charCodeAt(j);
+  const mime=dataUrl.slice(5,i).split(';')[0]||'';
+  return { bytes, mime };
+}
+function _bytesToDataURL(bytes, mime){
+  let bin=''; const CH=0x8000;
+  for(let j=0;j<bytes.length;j+=CH) bin+=String.fromCharCode.apply(null, bytes.subarray(j,j+CH));
+  return `data:${mime};base64,`+btoa(bin);
+}
+let _crcTable=null;
+function _crc32(buf){
+  if(!_crcTable){ _crcTable=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); _crcTable[n]=c>>>0; } }
+  let c=0xFFFFFFFF; for(let i=0;i<buf.length;i++) c=_crcTable[(c^buf[i])&0xFF]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;
+}
+function _pngSetDpi(bytes, dpi){
+  const sig=[137,80,78,71,13,10,26,10];
+  for(let i=0;i<8;i++) if(bytes[i]!==sig[i]) return bytes;
+  const ppm=Math.round(dpi/0.0254);
+  const type=[0x70,0x48,0x59,0x73]; // pHYs
+  const data=new Uint8Array(9); const dv=new DataView(data.buffer);
+  dv.setUint32(0,ppm); dv.setUint32(4,ppm); data[8]=1; // unit = metre
+  const chunk=new Uint8Array(21); const cv=new DataView(chunk.buffer);
+  cv.setUint32(0,9); chunk.set(type,4); chunk.set(data,8);
+  const crcBuf=new Uint8Array(13); crcBuf.set(type,0); crcBuf.set(data,4);
+  cv.setUint32(17,_crc32(crcBuf));
+  // find IHDR end
+  let pos=8, ihdrEnd=-1;
+  while(pos+8<=bytes.length){
+    const len=((bytes[pos]<<24)|(bytes[pos+1]<<16)|(bytes[pos+2]<<8)|bytes[pos+3])>>>0;
+    const t=String.fromCharCode(bytes[pos+4],bytes[pos+5],bytes[pos+6],bytes[pos+7]);
+    const end=pos+12+len;
+    if(t==='IHDR'){ ihdrEnd=end; break; }
+    pos=end;
+  }
+  if(ihdrEnd<0) return bytes;
+  // rebuild: header..IHDR + pHYs + rest (dropping any existing pHYs)
+  const parts=[bytes.subarray(0,ihdrEnd), chunk];
+  let p=ihdrEnd;
+  while(p+8<=bytes.length){
+    const len=((bytes[p]<<24)|(bytes[p+1]<<16)|(bytes[p+2]<<8)|bytes[p+3])>>>0;
+    const t=String.fromCharCode(bytes[p+4],bytes[p+5],bytes[p+6],bytes[p+7]);
+    const end=p+12+len;
+    if(t!=='pHYs') parts.push(bytes.subarray(p,end));
+    if(t==='IEND'){ p=end; break; }
+    p=end;
+  }
+  if(p<bytes.length) parts.push(bytes.subarray(p));
+  let total=0; parts.forEach(a=>total+=a.length);
+  const out=new Uint8Array(total); let o=0; parts.forEach(a=>{ out.set(a,o); o+=a.length; });
+  return out;
+}
+function _jpegSetDpi(bytes, dpi){
+  if(bytes[0]!==0xFF||bytes[1]!==0xD8) return bytes;
+  let p=2;
+  while(p+4<bytes.length && bytes[p]===0xFF){
+    const marker=bytes[p+1];
+    if(marker===0xD8||marker===0xD9){ p+=2; continue; }
+    const len=(bytes[p+2]<<8)|bytes[p+3];
+    if(marker===0xE0 && bytes[p+4]===0x4A&&bytes[p+5]===0x46&&bytes[p+6]===0x49&&bytes[p+7]===0x46&&bytes[p+8]===0x00){
+      const out=bytes.slice();
+      out[p+11]=1;                              // units = dots/inch
+      out[p+12]=(dpi>>8)&0xFF; out[p+13]=dpi&0xFF; // X density
+      out[p+14]=(dpi>>8)&0xFF; out[p+15]=dpi&0xFF; // Y density
+      return out;
+    }
+    if(marker===0xDA) break; // start of scan
+    p+=2+len;
+  }
+  // no JFIF APP0 present -> insert one right after SOI
+  const seg=new Uint8Array([0xFF,0xE0,0x00,0x10,0x4A,0x46,0x49,0x46,0x00,1,1,1,(dpi>>8)&0xFF,dpi&0xFF,(dpi>>8)&0xFF,dpi&0xFF,0,0]);
+  const out=new Uint8Array(bytes.length+seg.length);
+  out.set(bytes.subarray(0,2),0); out.set(seg,2); out.set(bytes.subarray(2),2+seg.length);
+  return out;
+}
+function applyDpi(dataUrl, dpi){
+  try{
+    dpi=parseInt(dpi,10); if(!dpi||dpi<=0) return dataUrl;
+    const { bytes, mime }=_dataURLToBytes(dataUrl);
+    let out;
+    if(mime==='image/png') out=_pngSetDpi(bytes,dpi);
+    else if(mime==='image/jpeg') out=_jpegSetDpi(bytes,dpi);
+    else return dataUrl;
+    return _bytesToDataURL(out, mime);
+  }catch(e){ console.warn('applyDpi failed',e); return dataUrl; }
 }
 function blobToDataURL(blob){
   return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result); r.onerror=()=>rej(new Error('GIF encode failed')); r.readAsDataURL(blob); });
