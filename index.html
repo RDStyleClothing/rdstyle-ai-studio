@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.5</title>
+<title>RD STYLE AI STUDIO — V2.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -272,7 +272,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.5</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.6</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -982,6 +982,24 @@ function backdropClause(meta){
     : `BACKDROP: a ${name} (${bd.color}) perfectly uniform, flat seamless studio background — a single even tone.`;
   return `ON-MODEL BACKDROP: ${grad} ${light} No props, no scenery, no on-image text.`;
 }
+// Complementary styling for On-Model shots. A hero TOP is paired with neutral
+// trousers so the shot reads as a full outfit. A hero BOTTOM (skirt / pants /
+// shorts) is instead paired with a neutral top and MUST NOT get a second pair of
+// pants layered under it — that "double-bottom" bug put brown trousers under a
+// white skirt. Keyed off the explicit "Bottoms" category (plus obvious keywords)
+// so the ambiguous Denim / Woven categories keep the default top behavior.
+function isBottomGarment(meta){
+  const cat = meta.category || '';
+  if(/^bottoms$/i.test(cat)) return true;
+  const hay = `${cat} ${meta.styleName||''} ${meta.notes||''}`;
+  return /\b(skirt|trouser|pants?|jeans?|shorts?|leggings?|chino|slack|culotte|palazzo)\b/i.test(hay);
+}
+function complementClause(meta){
+  if(isBottomGarment(meta)){
+    return `The ${meta.category} is the HERO garment, worn on the LOWER body. Style it with a simple, well-fitted, neutral TOP (a plain tee or fine knit) so all attention stays on the ${meta.category}, plus appropriate footwear. CRITICAL: the hero ${meta.category} is the ONLY lower-body garment — do NOT add, layer, or show any additional trousers, pants, jeans, leggings or shorts under, over, or beneath it. Show the model's hands.`;
+  }
+  return `Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}.`;
+}
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
   const styleLine = meta.styleName || 'Unnamed garment';
@@ -995,7 +1013,7 @@ function buildPrompt(meta){
       : backdropClause(meta);
   const styleRule = isRender
     ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
-    : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}. Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
+    : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. ${complementClause(meta)} Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
   const rules = isRender ? [
     bgRule,
     "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no plastic cylinder, no torso form outline, no shoulder supports, no base, no clips, no rods. Only the garment fabric floating in 3D space. The neck opening must be wide, fully open and hollow, showing only the inside back collar.",
@@ -1359,6 +1377,7 @@ function buildMoveStillPrompt(meta){
   return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
 MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
 ${angleClause(meta.angle)}
+${complementClause(meta)}
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
 }
