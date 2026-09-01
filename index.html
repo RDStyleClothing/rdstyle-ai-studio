@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.6</title>
+<title>RD STYLE AI STUDIO — V2.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -16,7 +16,7 @@
   /* checkerboard for transparent previews */
   --checker:linear-gradient(45deg,#161616 25%,transparent 25%,transparent 75%,#161616 75%,#161616),linear-gradient(45deg,#161616 25%,transparent 25%,transparent 75%,#161616 75%,#161616);
 }
-body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 button{cursor:pointer;font-family:inherit;background:none;border:none;color:inherit}
 input,textarea,select{font-family:var(--font-sans);color:var(--ink)}
 a{color:var(--info)}
@@ -46,19 +46,25 @@ a{color:var(--info)}
 .key-dot{width:6px;height:6px;border-radius:50%;background:var(--danger)}
 .key-dot.ok{background:var(--good)}
 /* UPLOAD / WELCOME SCREEN */
-.welcome{max-width:680px;width:100%;margin:0 auto;padding:72px 24px 40px;text-align:center}
+.welcome{max-width:680px;width:100%;margin:0 auto;padding:72px 24px 40px;text-align:center;flex:1;min-height:0;overflow-y:auto}
 .welcome-hero{font-family:var(--font-display);font-size:clamp(40px,7vw,84px);font-weight:900;letter-spacing:0.02em;line-height:0.95;text-transform:uppercase;margin-bottom:18px}
 .welcome-sub{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:var(--muted);margin-bottom:40px}
 .start-btn{background:#fff;color:#000;font-weight:700;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;padding:16px 40px;border-radius:12px;transition:all .2s}
 .start-btn:hover{background:#e5e5e5}
 .welcome-note{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:22px;opacity:.7}
 /* APP LAYOUT */
-.app{display:none;flex:1;flex-direction:column;height:calc(100vh - 60px);overflow:hidden}
+.app{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden}
 .app.active{display:flex}
-.studio-wrap{flex:1;display:flex;flex-direction:row;overflow:hidden}
-@media(max-width:900px){.studio-wrap{flex-direction:column}}
+.studio-wrap{flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden}
+/* Stacked (narrow) layout: let the wrap scroll and pin the preview so it floats
+   centered at the top while the control menu scrolls beneath it. */
+@media(max-width:900px){
+  .studio-wrap{flex-direction:column;overflow-y:auto}
+  .stage-col{order:-1;position:sticky;top:0;z-index:5;flex:none;height:56vh;background:var(--stage)}
+  .sidebar{overflow-y:visible}
+}
 /* SIDEBAR */
-.sidebar{width:400px;flex-shrink:0;border-right:1px solid var(--line);padding:28px;overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;gap:30px}
+.sidebar{width:400px;flex-shrink:0;min-height:0;border-right:1px solid var(--line);padding:28px;overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;gap:30px}
 @media(max-width:900px){.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line)}}
 .field-label{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:12px}
 .sub-label{font-size:10px;color:var(--muted);margin-bottom:6px;display:block}
@@ -272,7 +278,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.6</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.7</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
