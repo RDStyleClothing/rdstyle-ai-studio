@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V2.7</title>
+<title>RD STYLE AI STUDIO — V3.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -124,7 +124,7 @@ select.select option{background:#0d0d0d}
 .result img{width:100%;height:100%;box-shadow:0 30px 60px rgba(0,0,0,0.5);border-radius:18px}
 .result video{width:100%;height:100%;object-fit:cover;box-shadow:0 30px 60px rgba(0,0,0,0.5);border-radius:18px;background:#000}
 .result.transparent img{object-fit:contain}
-.result:not(.transparent) img{object-fit:cover}
+.result:not(.transparent) img{object-fit:contain}
 .meta-overlay{position:absolute;top:22px;left:22px;display:flex;flex-direction:column;gap:8px;max-width:75%}
 .meta-name{background:rgba(0,0,0,0.45);backdrop-filter:blur(10px);padding:11px 13px;border:1px solid var(--line);border-radius:12px}
 .meta-name .k{font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.4);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:3px}
@@ -278,7 +278,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V2.7</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.2</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -334,6 +334,10 @@ select.select option{background:#0d0d0d}
           <input type="file" id="refFile" accept="image/*" class="hidden" onchange="handleRef(event)"/>
         </div>
         <div id="garmentLockPanel" style="margin-top:14px"></div>
+      </section>
+      <section>
+        <label class="field-label">Garment Category</label>
+        <div class="grid2" id="catGroup"></div>
       </section>
       <section>
         <label class="field-label">Render Mode</label>
@@ -420,10 +424,6 @@ select.select option{background:#0d0d0d}
         <div class="note-box" id="veoNote" style="margin-top:14px">
           <b>Cinematic.</b> Generates an On-Model still, then animates it into a real ~8&nbsp;second 1080p MP4 with Veo 3.1 Fast — fluid, photoreal motion. <b>Requires a paid-tier Gemini key</b> (Veo has no free tier) and costs roughly $0.80–$1.20 per clip. Takes 1–2&nbsp;minutes.
         </div>
-      </section>
-      <section>
-        <label class="field-label">Garment Category</label>
-        <div class="grid2" id="catGroup"></div>
       </section>
       <section>
         <label class="field-label">Material &amp; Style</label>
@@ -622,7 +622,7 @@ select.select option{background:#0d0d0d}
 // flat-white render -> client-side flood-fill transparency, 429 backoff.
 // Persistence: IndexedDB catalog vault + localStorage for keys/prefs.
 // =====================================================================
-const CATEGORIES = ['Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
+const CATEGORIES = ['T-Shirt','Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
 const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
@@ -1015,7 +1015,7 @@ function buildPrompt(meta){
   const bgRule = isRender
     ? "GHOST MANNEQUIN BACKGROUND: CRITICAL — the garment MUST float on a 100% PURE FLAT SOLID WHITE background, hex #FFFFFF. NOT off-white, NOT light gray, NOT cream. Exact RGB (255,255,255). ZERO shadows of any kind — no drop shadows, no floor shadows, no ambient occlusion, no vignette, no gradient. The background must be a single uniform flat #FFFFFF value so automated background removal can extract the garment cleanly. Any deviation from pure white will cause extraction failure."
     : cutout
-      ? "ON-MODEL BACKGROUND: CRITICAL — place the model on a 100% PURE FLAT SOLID WHITE seamless studio background, hex #FFFFFF, exact RGB (255,255,255). NOT off-white, NOT grey, NOT beige. Even, high-key lighting with NO cast shadows on the background — no floor shadow, no drop shadow, no gradient, no vignette. The background must be a single uniform flat #FFFFFF value so it can be isolated cleanly. No props, no scenery, no text."
+      ? "ON-MODEL BACKGROUND (CUTOUT): CRITICAL — place the model on a 100% PURE FLAT SOLID WHITE seamless studio background, hex #FFFFFF, exact RGB (255,255,255). NOT off-white, NOT grey, NOT beige. Light the background COMPLETELY EVENLY right up to all four frame edges — the SAME pure white in every corner and along every edge, with NO lighting falloff, NO darkening toward the corners, NO vignette, NO gradient, and NO soft halo, bloom or glow around the model or the hair. NO cast shadows on the background — no floor shadow, no drop shadow. Keep the ENTIRE outline of the model — every strand of hair included — crisply and cleanly separated from the white so it cuts out with a clean edge. The background must be one single uniform flat #FFFFFF value edge to edge so it can be isolated perfectly. No props, no scenery, no text."
       : backdropClause(meta);
   const styleRule = isRender
     ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
@@ -1037,7 +1037,7 @@ function buildPrompt(meta){
     "NO TAGS OR ARTIFACTS: remove price tags, barcode tags, sizing tags and brand labels from the garment.",
     "PHOTOREALISM: high-end catalog quality, true-to-life proportions, no extra limbs or distortions.",
   ];
-  const refLine = meta.hasRef ? "REFERENCE IMAGE: the attached image is the design/silhouette reference — match its construction, pattern, drape and color precisely." : "";
+  const refLine = meta.hasRef ? "REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): the attached reference image shows the EXACT garment to depict. Its garment TYPE and silhouette are binding — reproduce the SAME neckline and collar, the SAME sleeve length, the SAME closure (pullover vs buttoned placket), the SAME body length, hem and overall proportions as the reference. Do NOT convert it into a different garment: for example do not turn a t-shirt into a shirt, overshirt, jacket, cardigan or sweater; do not add a collar, buttons, plackets, chest pockets or long sleeves that the reference does not have. Match its construction, seams, stripe pattern and spacing, drape and color precisely. If the reference garment and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type." : "";
   const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
   const fabricStr = meta.fabricContent ? `${meta.fabric} — ${meta.fabricContent}` : meta.fabric;
   return `AI FASHION CATALOG ENGINE — produce a premium menswear render.
@@ -1171,7 +1171,7 @@ async function generate(){
       // RENDER always, and ON-MODEL when Transparent is selected -> cut to alpha
       if(meta.mode==='render' || (meta.mode==='model' && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg')){
         document.getElementById('procStep').textContent='Extracting transparency…';
-        try{ image = await removeBg(image); }catch(e){ console.warn('BG removal failed',e); }
+        try{ image = await removeBg(image, meta.mode); }catch(e){ console.warn('BG removal failed',e); }
       }
       // Enforce the exact customer output size / fit / format.
       // For an On-Model scene (not a cutout), pad with the chosen backdrop color.
@@ -1380,10 +1380,14 @@ function buildMoveStillPrompt(meta){
   const dir = meta.notes
     ? `ART DIRECTION (follow exactly — this governs the scene, location, styling and mood): ${meta.notes}`
     : `Natural real-world lifestyle setting suitable for a fashion campaign.`;
+  const refClause = meta.hasRef
+    ? `REFERENCE GARMENT (AUTHORITATIVE): the attached reference image shows the EXACT garment — reproduce its garment TYPE, neckline/collar, sleeve length, closure, body length, hem, construction, stripe/pattern and color exactly. Do NOT change it into a different garment type or add a collar, buttons, pockets or long sleeves the reference does not have. If the reference and the category label disagree, follow the reference.`
+    : '';
   return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
 MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
 ${angleClause(meta.angle)}
 ${complementClause(meta)}
+${refClause}
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
 }
@@ -1700,11 +1704,19 @@ async function framesToGif(canvases, delay){
   });
 }
 // =====================================================================
-// TRANSPARENCY — safe-zone-aware flood-fill background removal
-// (ported from SweaterVision). Only removes pixels reachable from the
-// image edges; interior pixels are protected so light garments survive.
+// TRANSPARENCY — background removal.
+//  · Ghost-mannequin (mode 'render'): flat #FFFFFF safe-zone flood-fill,
+//    unchanged from SweaterVision — only removes pixels reachable from the
+//    image edges; interior pixels are protected so light garments survive.
+//  · On-Model cutout (mode 'model'): gradient-tolerant hysteresis matte.
+//    On-Model scenes carry soft studio lighting and a halo through hair
+//    that the flat-white fill can't cross, which used to leave a white
+//    slab of un-removed background around the figure. This path follows
+//    the soft halo/gradient out to a looser bound (THR_HIGH) while
+//    definite-subject pixels (anchors) block the fill, so interior light
+//    garment areas stay protected by enclosure.
 // =====================================================================
-async function removeBg(b64){
+async function removeBg(b64, mode){
   return new Promise(res=>{
     const img=new Image();
     img.onload=()=>{
@@ -1719,9 +1731,58 @@ async function removeBg(b64){
         let bgR=0,bgG=0,bgB=0,maxBr=-1;
         for(const s of samples){const br=(s[0]+s[1]+s[2])/3;if(br>maxBr){maxBr=br;bgR=s[0];bgG=s[1];bgB=s[2];}}
         const bgBr=(bgR+bgG+bgB)/3;
-        // 2. Threshold for "is this pixel background-colored?"
         const THR = bgBr>200?42:bgBr>128?38:45;
         const dist=(r,g,b)=>{const dr=r-bgR,dg=g-bgG,db=b-bgB;return Math.sqrt(dr*dr+dg*dg+db*db);};
+        // ============================================================
+        // ON-MODEL cutout -> gradient-tolerant hysteresis matte.
+        // ============================================================
+        if(mode==='model'){
+          const N=W*H;
+          const THR_LOW=THR;                          // confident background
+          const THR_HIGH=Math.round(THR*2.0);         // halo / gradient tolerance
+          // Definite-subject anchors block the fill (skin, hair, colored
+          // garment, tan trousers all sit well beyond THR_HIGH from white).
+          const anchor=new Uint8Array(N);
+          for(let i=0;i<N;i++){const pi=i*4; if(dist(d[pi],d[pi+1],d[pi+2])>THR_HIGH) anchor[i]=1;}
+          const crossable=i=>{ if(anchor[i]) return false; const pi=i*4; return dist(d[pi],d[pi+1],d[pi+2])<=THR_HIGH; };
+          const confident=i=>{ const pi=i*4; return dist(d[pi],d[pi+1],d[pi+2])<=THR_LOW; };
+          const visited=new Uint8Array(N);
+          const removed=new Uint8Array(N);
+          // Edge-seeded hysteresis flood. A connected soft-background region is
+          // only cut if it also contains a confident (<=THR_LOW) background
+          // pixel, so a light garment that merely grazes the frame edge is kept.
+          function floodFrom(seed){
+            const bucket=[]; const st=[seed]; visited[seed]=1; let hasConfident=false;
+            while(st.length){
+              const i=st.pop(); bucket.push(i); if(confident(i)) hasConfident=true;
+              const x=i%W, y=(i/W)|0;
+              if(x>0){const ni=i-1; if(!visited[ni]&&crossable(ni)){visited[ni]=1;st.push(ni);}}
+              if(x<W-1){const ni=i+1; if(!visited[ni]&&crossable(ni)){visited[ni]=1;st.push(ni);}}
+              if(y>0){const ni=i-W; if(!visited[ni]&&crossable(ni)){visited[ni]=1;st.push(ni);}}
+              if(y<H-1){const ni=i+W; if(!visited[ni]&&crossable(ni)){visited[ni]=1;st.push(ni);}}
+            }
+            if(hasConfident){ for(const i of bucket) removed[i]=1; }
+          }
+          for(let x=0;x<W;x++){ const t=x, b=(H-1)*W+x; if(!visited[t]&&crossable(t))floodFrom(t); if(!visited[b]&&crossable(b))floodFrom(b); }
+          for(let y=0;y<H;y++){ const l=y*W, r=y*W+(W-1); if(!visited[l]&&crossable(l))floodFrom(l); if(!visited[r]&&crossable(r))floodFrom(r); }
+          // Alpha + 1px feather along the cut boundary for a clean edge.
+          const alpha=new Float32Array(N);
+          for(let i=0;i<N;i++) alpha[i]=removed[i]?0:1;
+          for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+            const i=y*W+x;
+            if(!removed[i] && (removed[i-1]||removed[i+1]||removed[i-W]||removed[i+W])){
+              const pi=i*4; const dd=dist(d[pi],d[pi+1],d[pi+2]);
+              alpha[i]=Math.max(0,Math.min(1,(dd-THR_LOW*0.5)/(THR_LOW*0.5)));
+            }
+          }
+          for(let i=0;i<N;i++) d[i*4+3]=Math.round(alpha[i]*255);
+          ctx.putImageData(id,0,0);
+          return res(c.toDataURL('image/png'));
+        }
+        // ============================================================
+        // GHOST-MANNEQUIN (flat #FFFFFF) -> original safe-zone flood fill.
+        // ============================================================
+        // 2. Threshold for "is this pixel background-colored?"
         // 3. Anchor mask — pixels clearly NOT background-colored
         const anchor=new Uint8Array(W*H);
         for(let i=0;i<W*H;i++){const pi=i*4;if(dist(d[pi],d[pi+1],d[pi+2])>THR)anchor[i]=1;}
@@ -1738,7 +1799,7 @@ async function removeBg(b64){
         }
         // 5. Edge-seeded flood fill marks bg pixels, skipping safe zone
         const vis=new Uint8Array(W*H);
-        const stack=[]; 
+        const stack=[];
         const seed=(x,y)=>{ const i=y*W+x; if(vis[i]||safe[i])return; const pi=i*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[i]=1; stack.push(i); } };
         for(let x=0;x<W;x++){ seed(x,0); seed(x,H-1); }
         for(let y=0;y<H;y++){ seed(0,y); seed(W-1,y); }
