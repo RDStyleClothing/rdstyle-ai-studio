@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V3.2</title>
+<title>RD STYLE AI STUDIO — V3.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -278,7 +278,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.2</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.3</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -356,14 +356,19 @@ select.select option{background:#0d0d0d}
       <section id="modelConfig" class="hidden">
         <label class="field-label">Model Configuration</label>
         <div id="modelLockPanel" style="margin-bottom:16px"></div>
+        <div style="margin-bottom:14px">
+          <label class="sub-label">Model Age Group</label>
+          <div class="pill-row" id="ageGroupGroup"></div>
+          <div class="note-box" id="ageGroupNote" style="margin-top:10px"><b>Child</b> and <b>Teen</b> swap in age-appropriate ranges (and Boy/Girl labels for kids) and steer the render toward a wholesome, fully-clothed kids/youth catalog look.</div>
+        </div>
         <div class="grid2" style="gap:14px">
           <div>
-            <label class="sub-label">Sex</label>
-            <select class="select" id="mGender"><option>Male</option><option>Female</option><option>Non-binary</option></select>
+            <label class="sub-label" id="mGenderLabel">Sex</label>
+            <select class="select" id="mGender"></select>
           </div>
           <div>
             <label class="sub-label">Age Range</label>
-            <select class="select" id="mAge"><option>18-24</option><option selected>25-30</option><option>31-40</option><option>41-55</option><option>55+</option></select>
+            <select class="select" id="mAge"></select>
           </div>
           <div>
             <label class="sub-label">Ethnicity</label>
@@ -626,6 +631,19 @@ const CATEGORIES = ['T-Shirt','Outerwear','Woven','Knitwear','Denim','Bottoms','
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
 const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
+// Model age groups for On-Model / Move. Child & Teen swap the Sex + Age
+// options and steer the prompt toward wholesome, age-appropriate catalog imagery.
+const AGE_GROUPS = [['adult','Adult'],['teen','Teen'],['child','Child']];
+const AGE_OPTIONS = {
+  adult:['18-24','25-30','31-40','41-55','55+'],
+  teen:['13-15','16-17'],
+  child:['0-12 mo (Baby)','1-2 (Toddler)','3-4','5-6','7-8','9-10','11-12'],
+};
+const GENDER_OPTIONS = {
+  adult:['Male','Female','Non-binary'],
+  teen:['Male','Female','Non-binary'],
+  child:['Boy','Girl','Non-binary'],
+};
 // On-Model photoshoot backdrop swatches. [hex, human label].
 const BACKDROPS = [
   ['#FFFFFF','White'],['#F3EFE7','Ivory'],['#E7D8C0','Warm Beige'],
@@ -655,7 +673,7 @@ const CUSTOMER_PRESETS = [
 const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4',5/4],['1:1',1],['4:5',4/5],['3:4',3/4],['2:3',2/3],['9:16',9/16]];
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
-  mode:'render', category:'Outerwear', fit:'Slim', angle:'front',
+  mode:'render', category:'Outerwear', fit:'Slim', angle:'front', ageGroup:'adult',
   bgColor:'#FFFFFF', bgColorLabel:'White', naturalLight:false, gradient:false,
   moveEngine:'veo',
   refImage:null,
@@ -681,6 +699,9 @@ function init(){
   buildCategoryButtons();
   buildFitButtons();
   buildAngleButtons();
+  buildAgeGroupButtons();
+  buildGenderOptions();
+  buildAgeOptions();
   buildBackdropSwatches();
   buildFilterCategories();
   buildPresetOptions();
@@ -703,7 +724,7 @@ function saveConfig(){
   if(S._initing) return;
   try{
     const cfg = {
-      spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, moveEngine:S.moveEngine,
+      spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, ageGroup:S.ageGroup, moveEngine:S.moveEngine,
       bgColor:S.bgColor, bgColorLabel:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient,
       fabric:(document.getElementById('fabric')||{}).value,
       model:{
@@ -726,6 +747,7 @@ function loadConfig(){
   if(cfg.category) S.category=cfg.category;
   if(cfg.fit) S.fit=cfg.fit;
   if(cfg.angle) S.angle=cfg.angle;
+  if(cfg.ageGroup && AGE_OPTIONS[cfg.ageGroup]) S.ageGroup=cfg.ageGroup;
   if(cfg.bgColor) S.bgColor=cfg.bgColor;
   if(cfg.bgColorLabel) S.bgColorLabel=cfg.bgColorLabel;
   if(typeof cfg.naturalLight==='boolean') S.naturalLight=cfg.naturalLight;
@@ -767,6 +789,33 @@ function buildAngleButtons(){
     <button class="pill ${id===S.angle?'active':''}" data-angle="${id}" onclick="setAngle('${id}')">${label}</button>`).join('');
 }
 function angleLabel(id){ const a=ANGLES.find(x=>x[0]===id); return a?a[1]:'Front'; }
+// ---------- MODEL AGE GROUP (Adult / Teen / Child) ----------
+function buildAgeGroupButtons(){
+  const el=document.getElementById('ageGroupGroup'); if(!el) return;
+  el.innerHTML=AGE_GROUPS.map(([id,label])=>`
+    <button class="pill ${id===S.ageGroup?'active':''}" data-agegroup="${id}" onclick="setAgeGroup('${id}')">${label}</button>`).join('');
+  const gl=document.getElementById('mGenderLabel');
+  if(gl) gl.textContent = S.ageGroup==='child' ? 'Sex (Boy / Girl)' : 'Sex';
+}
+function buildGenderOptions(preferred){
+  const sel=document.getElementById('mGender'); if(!sel) return;
+  const opts=GENDER_OPTIONS[S.ageGroup]||GENDER_OPTIONS.adult;
+  const want=(preferred && opts.includes(preferred))?preferred:opts[0];
+  sel.innerHTML=opts.map(o=>`<option${o===want?' selected':''}>${o}</option>`).join('');
+}
+function buildAgeOptions(preferred){
+  const sel=document.getElementById('mAge'); if(!sel) return;
+  const opts=AGE_OPTIONS[S.ageGroup]||AGE_OPTIONS.adult;
+  const dflt=S.ageGroup==='adult'?'25-30':opts[0];
+  const want=(preferred && opts.includes(preferred))?preferred:dflt;
+  sel.innerHTML=opts.map(o=>`<option${o===want?' selected':''}>${o}</option>`).join('');
+}
+function setAgeGroup(g){
+  if(!AGE_OPTIONS[g]) return;
+  S.ageGroup=g;
+  buildAgeGroupButtons(); buildGenderOptions(); buildAgeOptions();
+  saveConfig();
+}
 function buildBackdropSwatches(){
   const wrap=document.getElementById('bgColorSwatches'); if(!wrap) return;
   const isCustom = !BACKDROPS.some(([hex])=>hex.toLowerCase()===String(S.bgColor).toLowerCase());
@@ -1001,10 +1050,33 @@ function isBottomGarment(meta){
   return /\b(skirt|trouser|pants?|jeans?|shorts?|leggings?|chino|slack|culotte|palazzo)\b/i.test(hay);
 }
 function complementClause(meta){
+  const youth = isYouth(meta.model);
   if(isBottomGarment(meta)){
     return `The ${meta.category} is the HERO garment, worn on the LOWER body. Style it with a simple, well-fitted, neutral TOP (a plain tee or fine knit) so all attention stays on the ${meta.category}, plus appropriate footwear. CRITICAL: the hero ${meta.category} is the ONLY lower-body garment — do NOT add, layer, or show any additional trousers, pants, jeans, leggings or shorts under, over, or beneath it. Show the model's hands.`;
   }
-  return `Show the model's hands and waist. The model wears neutral, professional trousers that complement the ${meta.category}.`;
+  return `Show the model's hands and waist. The model wears ${youth?'simple, age-appropriate neutral bottoms':'neutral, professional trousers'} that complement the ${meta.category}.`;
+}
+// ---------- MODEL AGE-GROUP PROMPT HELPERS ----------
+// Child/Teen renders describe the correct subject and add a wholesome,
+// family-friendly, fully-clothed catalog guardrail. Older saved renders
+// (no ageGroup on meta.model) are treated as Adult, so nothing regresses.
+function isYouth(model){ return !!model && (model.ageGroup==='child'||model.ageGroup==='teen'); }
+function cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
+function modelNoun(model){
+  if(model && model.ageGroup==='child') return 'a real child model';
+  if(model && model.ageGroup==='teen') return 'a real teenage model';
+  return 'a real adult human model';
+}
+function youthClause(model){
+  if(!isYouth(model)) return '';
+  const kind = model.ageGroup==='child' ? "CHILDREN'S" : 'YOUTH';
+  const who  = model.ageGroup==='child' ? 'child' : 'teen';
+  return ` WHOLESOME ${kind} CATALOG IMAGE: the ${who} is fully, modestly and appropriately dressed in the garment, with age-appropriate styling and a natural, relaxed, playful pose. Family-friendly commercial apparel-catalog context only — no adult styling, no suggestive posing.`;
+}
+function headerSubject(model){
+  if(model && model.ageGroup==='child') return "children's apparel";
+  if(model && model.ageGroup==='teen') return 'youth apparel';
+  return 'menswear';
 }
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
@@ -1019,7 +1091,7 @@ function buildPrompt(meta){
       : backdropClause(meta);
   const styleRule = isRender
     ? `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ${meta.category} garment. The garment must look natural with realistic folds and fabric weight. An invisible mannequin form underneath gives 3D volume but is 100% invisible — only the garment fabric is visible. No neck post, no visible torso form, no mannequin stand. The neck opening must be a clean open hollow circle showing only the inside back collar. Reconstruct with 3D volume, rounded shoulders and natural contour. Straight direct front-facing camera, symmetrical, centered.`
-    : `STYLE: High-end editorial fashion campaign photograph. A real human model wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. ${complementClause(meta)} Natural confident pose, photorealistic skin and hair, sharp focus on garment construction.`;
+    : `STYLE: High-end editorial fashion campaign photograph. ${cap(modelNoun(meta.model))} wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}${isYouth(meta.model)?` (${meta.model.ageGroup} model)`:''}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. ${complementClause(meta)}${youthClause(meta.model)} Natural, relaxed pose, photorealistic skin and hair, sharp focus on garment construction.`;
   const rules = isRender ? [
     bgRule,
     "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no plastic cylinder, no torso form outline, no shoulder supports, no base, no clips, no rods. Only the garment fabric floating in 3D space. The neck opening must be wide, fully open and hollow, showing only the inside back collar.",
@@ -1040,7 +1112,7 @@ function buildPrompt(meta){
   const refLine = meta.hasRef ? "REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): the attached reference image shows the EXACT garment to depict. Its garment TYPE and silhouette are binding — reproduce the SAME neckline and collar, the SAME sleeve length, the SAME closure (pullover vs buttoned placket), the SAME body length, hem and overall proportions as the reference. Do NOT convert it into a different garment: for example do not turn a t-shirt into a shirt, overshirt, jacket, cardigan or sweater; do not add a collar, buttons, plackets, chest pockets or long sleeves that the reference does not have. Match its construction, seams, stripe pattern and spacing, drape and color precisely. If the reference garment and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type." : "";
   const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
   const fabricStr = meta.fabricContent ? `${meta.fabric} — ${meta.fabricContent}` : meta.fabric;
-  return `AI FASHION CATALOG ENGINE — produce a premium menswear render.
+  return `AI FASHION CATALOG ENGINE — produce a premium ${headerSubject(meta.model)} render.
 STYLE NAME / NUMBER: "${styleLine}"${colorStr?`\nCOLORWAY: ${colorStr}`:''}
 GARMENT CATEGORY: ${meta.category}
 PRIMARY FABRIC: ${fabricStr}   |   FIT: ${meta.fit}
@@ -1138,6 +1210,7 @@ async function generate(){
       ethnicity: document.getElementById('mEthnicity').value.trim(),
       skin: document.getElementById('mSkin').value.trim(),
       hair: document.getElementById('mHair').value.trim(),
+      ageGroup: S.ageGroup,
     }
   };
   const veoMove = (meta.mode==='move' && meta.engine==='veo');
@@ -1383,10 +1456,10 @@ function buildMoveStillPrompt(meta){
   const refClause = meta.hasRef
     ? `REFERENCE GARMENT (AUTHORITATIVE): the attached reference image shows the EXACT garment — reproduce its garment TYPE, neckline/collar, sleeve length, closure, body length, hem, construction, stripe/pattern and color exactly. Do NOT change it into a different garment type or add a collar, buttons, pockets or long sleeves the reference does not have. If the reference and the category label disagree, follow the reference.`
     : '';
-  return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. A real human model wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
-MODEL — Sex: ${m.gender}; Age: ${m.age}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
+  return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. ${cap(modelNoun(meta.model))} wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
+MODEL — Sex: ${m.gender}; Age: ${m.age}${isYouth(meta.model)?` (${meta.model.ageGroup} model)`:''}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
 ${angleClause(meta.angle)}
-${complementClause(meta)}
+${complementClause(meta)}${youthClause(meta.model)}
 ${refClause}
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
@@ -1916,7 +1989,15 @@ function loadIntoForm(r){
   if(r.meta.engine) setMoveEngine(r.meta.engine);
   if(r.meta.frames) document.getElementById('moveFrames').value=String(r.meta.frames);
   if(r.meta.spec){ S.spec={ ...r.meta.spec }; markCustom(); refreshSpecUI(); }
-  if(r.meta.model){ document.getElementById('mGender').value=r.meta.model.gender||'Male'; document.getElementById('mAge').value=r.meta.model.age||'25-30'; document.getElementById('mEthnicity').value=r.meta.model.ethnicity||''; document.getElementById('mSkin').value=r.meta.model.skin||''; document.getElementById('mHair').value=r.meta.model.hair||''; }
+  if(r.meta.model){
+    S.ageGroup=(r.meta.model.ageGroup && AGE_OPTIONS[r.meta.model.ageGroup]) ? r.meta.model.ageGroup : 'adult';
+    buildAgeGroupButtons(); buildGenderOptions(r.meta.model.gender); buildAgeOptions(r.meta.model.age);
+    document.getElementById('mGender').value=r.meta.model.gender||GENDER_OPTIONS[S.ageGroup][0];
+    document.getElementById('mAge').value=r.meta.model.age||AGE_OPTIONS[S.ageGroup][0];
+    document.getElementById('mEthnicity').value=r.meta.model.ethnicity||'';
+    document.getElementById('mSkin').value=r.meta.model.skin||'';
+    document.getElementById('mHair').value=r.meta.model.hair||'';
+  }
 }
 function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); switchTab('studio'); generate(); }
 // =====================================================================
