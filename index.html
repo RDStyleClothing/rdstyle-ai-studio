@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V3.5</title>
+<title>RD STYLE AI STUDIO — V3.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -286,7 +286,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.5</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.6</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -301,7 +301,7 @@ select.select option{background:#0d0d0d}
 <!-- WELCOME -->
 <div class="welcome" id="welcome">
   <h1 class="welcome-hero">Render the<br>Collection</h1>
-  <p class="welcome-sub">3D Menswear Catalog · Ghost-Mannequin & On-Model</p>
+  <p class="welcome-sub">3D Menswear Catalog · Ghost-Mannequin &amp; On-Model</p>
   <button class="start-btn" onclick="enterApp()">Enter Studio</button>
   <p class="welcome-note">Bring your own Gemini key · Everything stays in your browser</p>
 </div>
@@ -353,6 +353,16 @@ select.select option{background:#0d0d0d}
               </button>
               <input type="file" id="refFileBottom" accept="image/*" class="hidden" onchange="handleRef(event,'bottom')"/>
             </div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="sub-label">Full-Body / Head-to-Toe <span style="opacity:0.5">(dresses, jumpsuits, full looks)</span></label>
+          <div id="refSlotFull" class="ref-slot">
+            <button class="upload-zone compact" onclick="document.getElementById('refFileFull').click()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Add Full-Body</span>
+            </button>
+            <input type="file" id="refFileFull" accept="image/*" class="hidden" onchange="handleRef(event,'full')"/>
           </div>
         </div>
         <div class="note-box" id="refModeNote"></div>
@@ -458,13 +468,19 @@ select.select option{background:#0d0d0d}
         <div style="display:flex;flex-direction:column;gap:16px">
           <div>
             <label class="sub-label">Fabric Texture <span class="req">REQUIRED</span></label>
-            <select class="select" id="fabric" onchange="clearMark('fabric')">
-              <option value="" disabled selected>Select fabric…</option>
+            <input type="text" id="fabric" class="text-input" list="fabricOptions" placeholder="Type or select fabric…" autocomplete="off" onchange="clearMark('fabric')" oninput="clearMark('fabric')"/>
+            <datalist id="fabricOptions">
               <option>Premium Italian Wool</option><option>Egyptian Cotton</option><option>Cotton Blend</option>
               <option>Jersey</option><option>Woven Cotton</option><option>Distressed Leather</option>
               <option>Raw Japanese Denim</option><option>Cashmere Blend</option><option>Technical Nylon</option>
               <option>Corduroy</option><option>Brushed Flannel</option>
-            </select>
+              <option>Faux Leather</option><option>French Terry</option><option>Scuba</option>
+              <option>Melton</option><option>Linen</option><option>Suede</option>
+              <option>Poplin</option><option>Viscose</option><option>Gauze</option>
+              <option>Waffle</option><option>Ponte</option><option>Twill</option>
+              <option>Satin</option><option>Lace</option><option>Velour</option>
+            </datalist>
+            <div class="uz-hint" style="margin-top:7px">Type or pick — custom fabrics allowed (more groups still being confirmed)</div>
           </div>
           <div>
             <label class="sub-label">Fit Profile <span class="req">REQUIRED</span></label>
@@ -653,8 +669,14 @@ select.select option{background:#0d0d0d}
 // V3.5 — required-field gate before a run: Style Name, 1 Source reference,
 // Garment Category, Fabric Texture, Fit Profile, and (On-Model/Move only)
 // Model Age Group. Category / Fabric / Fit / Age Group start UNSELECTED.
+// V3.6 — expanded garment categories (tanks, dresses, jumpsuits, outfits,
+// shirts, sweaters, skirts, activewear); open/custom Fabric field (datalist
+// + free text) with Astrid's fabric groups; a third Source reference slot,
+// Full-Body / Head-to-Toe, for one-piece garments (dress/jumpsuit) and
+// re-coloring existing head-to-toe shots. Two new garment scopes: 'full'
+// (one-piece full-body) and 'outfit' (head-to-toe styled mix).
 // =====================================================================
-const CATEGORIES = ['T-Shirt','Outerwear','Woven','Knitwear','Denim','Bottoms','Accessories'];
+const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
 const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
@@ -698,20 +720,22 @@ const CUSTOMER_PRESETS = [
 ];
 // Aspect ratios Gemini 3.1 Flash Image (Nano Banana 2) can be steered to (label -> w/h).
 const SUPPORTED_AR = [['21:9',21/9],['16:9',16/9],['3:2',3/2],['4:3',4/3],['5:4',5/4],['1:1',1],['4:5',4/5],['3:4',3/4],['2:3',2/3],['9:16',9/16]];
-// Top / bottom reference slots. RD often sells top+bottom sets: either or both
-// slots can be loaded. Whichever is loaded drives the garment scope (see refScope).
+// Reference slots. RD sells top+bottom sets AND one-piece full-body garments
+// (dresses, jumpsuits, full looks). Whichever is loaded drives the garment
+// scope (see refScope). Full-Body takes priority when present.
 const REF_SLOTS = {
   top:    { slot:'refSlotTop',    input:'refFileTop',    label:'Top' },
   bottom: { slot:'refSlotBottom', input:'refFileBottom', label:'Bottom' },
+  full:   { slot:'refSlotFull',   input:'refFileFull',   label:'Full-Body' },
 };
-function refVal(which){ return which==='bottom' ? S.refBottom : S.refTop; }
-function setRefVal(which,v){ if(which==='bottom') S.refBottom=v; else S.refTop=v; }
+function refVal(which){ return which==='bottom' ? S.refBottom : which==='full' ? S.refFull : S.refTop; }
+function setRefVal(which,v){ if(which==='bottom') S.refBottom=v; else if(which==='full') S.refFull=v; else S.refTop=v; }
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
   mode:'render', category:'', fit:'', angle:'front', ageGroup:'',
   bgColor:'#FFFFFF', bgColorLabel:'White', naturalLight:false, gradient:false,
   moveEngine:'veo',
-  refTop:null, refBottom:null,   // top / bottom garment reference images (either or both)
+  refTop:null, refBottom:null, refFull:null,   // top / bottom / full-body garment references (any combination)
   lockedModel:null,        // { image, label } — reused as identity reference
   lockedGarment:null,      // { image, label } — reused as garment reference
   spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92, dpi:300 },
@@ -745,8 +769,8 @@ function init(){
   applyConfigDom();           // restore fabric + model fields (DOM must exist first)
   setMode(S.mode);            // sync section visibility to the restored mode
   wireConfigPersist();        // save settings whenever they change
-  initRefDnD();               // enable drag-and-drop on the top & bottom reference slots
-  updateRefModeNote();        // set the top/bottom/set helper note
+  initRefDnD();               // enable drag-and-drop on the top / bottom / full-body reference slots
+  updateRefModeNote();        // set the top/bottom/full/set helper note
   renderModelLock();
   renderGarmentLock();
   updateKeyDot();
@@ -925,7 +949,7 @@ function setMoveEngine(e){
   document.getElementById('genLabel').textContent = (S.mode==='move') ? (e==='veo'?'Create Video Clip':'Create GIF Loop') : 'Create 3D Render';
   saveConfig();
 }
-function setCategory(c){ S.category=c; buildCategoryButtons(); clearMark('catGroup'); saveConfig(); }
+function setCategory(c){ S.category=c; buildCategoryButtons(); clearMark('catGroup'); updateRefModeNote(); saveConfig(); }
 function setFit(f){ S.fit=f; buildFitButtons(); clearMark('fitGroup'); saveConfig(); }
 function setAngle(a){ S.angle=a; buildAngleButtons(); saveConfig(); }
 // ---------- OUTPUT SPEC (size / fit / format) ----------
@@ -977,7 +1001,7 @@ function refreshSpecUI(){
   document.getElementById('specSummary').textContent=`${S.spec.width}×${S.spec.height} · ${S.spec.fit==='cover'?'Cover':'Contain'} · ${S.spec.format.toUpperCase()} · ${S.spec.dpi||300} DPI`;
 }
 function handleRef(e, which){ processRefFile(e.target.files?.[0], which); }
-// Shared by click-upload and drag-and-drop. `which` is 'top' or 'bottom'.
+// Shared by click-upload and drag-and-drop. `which` is 'top', 'bottom' or 'full'.
 function processRefFile(file, which){
   if(!file) return;
   if(!/^image\//.test(file.type||'')){ toast('Please use an image file','err'); return; }
@@ -987,23 +1011,29 @@ function processRefFile(file, which){
   reader.onerror = ()=>toast('Could not read that image','err');
   reader.readAsDataURL(file);
 }
-// Dynamic helper note under the Top/Bottom slots: explains what will be rendered
-// from whatever is loaded (top only, bottom only, or a coordinated set).
+// Dynamic helper note under the reference slots: explains what will be rendered
+// from whatever is loaded (full-body, top only, bottom only, or a coordinated set).
 function updateRefModeNote(){
   const el=document.getElementById('refModeNote'); if(!el) return;
-  const t=!!S.refTop, b=!!S.refBottom;
+  const t=!!S.refTop, b=!!S.refBottom, f=!!S.refFull;
+  const isOutfit=/^outfit$/i.test(S.category||'');
   let msg;
-  if(t&&b) msg='<b>Top + Bottom set.</b> Both pieces render as heroes and are worn together as one coordinated outfit.';
+  if(f){
+    msg = isOutfit
+      ? '<b>Head-to-toe look.</b> A full-body reference is loaded — the model wears the referenced pieces together as one coordinated head-to-toe outfit (category <b>Outfit</b>).'
+      : '<b>Full-body / head-to-toe.</b> A full-body reference is loaded — renders as ONE full-length garment (dress, jumpsuit or full-length piece), or re-colors an existing head-to-toe shot via the Color fields. Set the category to <b>Outfit</b> for a styled mixed look.';
+  }
+  else if(t&&b) msg='<b>Top + Bottom set.</b> Both pieces render as heroes and are worn together as one coordinated outfit.';
   else if(t) msg='<b>Top style.</b> Only a top is loaded — On-Model shots pair it with neutral bottoms; the render focuses on the top.';
   else if(b) msg='<b>Bottom style.</b> Only a bottom is loaded — On-Model shots pair it with a neutral top; the render focuses on the bottom.';
-  else msg='Add a <b>top</b> and/or a <b>bottom</b> reference — <b>at least one is required</b> to launch a render. Load one to render just that piece, or both for a top-and-bottom set.';
+  else msg='Add a <b>top</b> and/or <b>bottom</b> reference, or a <b>full-body</b> reference for dresses / jumpsuits / full looks — <b>at least one is required</b> to launch a render.';
   el.innerHTML=msg;
 }
-// Drag-and-drop onto either reference slot (works over the empty zone or an
+// Drag-and-drop onto any reference slot (works over the empty zone or an
 // existing preview). Handlers live on the persistent .ref-slot wrappers, not
 // the button that gets swapped out by showRefPreview()/clearRef().
 function initRefDnD(){
-  ['top','bottom'].forEach(which=>{
+  ['top','bottom','full'].forEach(which=>{
     const cfg=REF_SLOTS[which];
     const slot=document.getElementById(cfg.slot); if(!slot) return;
     ['dragenter','dragover'].forEach(ev=>slot.addEventListener(ev,e=>{
@@ -1102,29 +1132,49 @@ function backdropClause(meta){
 // trousers so the shot reads as a full outfit. A hero BOTTOM (skirt / pants /
 // shorts) is instead paired with a neutral top and MUST NOT get a second pair of
 // pants layered under it — that "double-bottom" bug put brown trousers under a
-// white skirt. Keyed off the explicit "Bottoms" category (plus obvious keywords)
-// so the ambiguous Denim / Woven categories keep the default top behavior.
+// white skirt. Keyed off the explicit "Bottoms" / "Skirt" category (plus obvious
+// keywords) so the ambiguous Denim / Woven categories keep the default top behavior.
 function isBottomGarment(meta){
   const scope = refScope(meta);
   if(scope==='bottom') return true;
-  if(scope==='top' || scope==='set') return false;
+  if(scope==='top' || scope==='set' || scope==='full' || scope==='outfit') return false;
   const cat = meta.category || '';
-  if(/^bottoms$/i.test(cat)) return true;
+  if(/^(bottoms|skirt)$/i.test(cat)) return true;
+  if(/^(dress|jumpsuit|outfit)$/i.test(cat)) return false;
   const hay = `${cat} ${meta.styleName||''} ${meta.notes||''}`;
   return /\b(skirt|trouser|pants?|jeans?|shorts?|leggings?|chino|slack|culotte|palazzo)\b/i.test(hay);
 }
 // Which garment(s) are being worked on, decided by the loaded reference images.
-// Both -> a top+bottom set; one -> that piece; none -> null (fall back to the
-// category/keyword detection above). Reads meta flags so saved renders work too.
+// Full-body -> a one-piece full garment (or, for the Outfit category, a styled
+// head-to-toe look); both top+bottom -> a set; one -> that piece; none -> null
+// (fall back to categoryScope). Reads meta flags so saved renders work too.
 function refScope(meta){
+  if(meta.hasFullRef) return /^outfit$/i.test(meta.category||'') ? 'outfit' : 'full';
   if(meta.hasTopRef && meta.hasBottomRef) return 'set';
   if(meta.hasTopRef) return 'top';
   if(meta.hasBottomRef) return 'bottom';
   return null;
 }
+// No-reference fallback scope from the Garment Category alone. Dress / Jumpsuit
+// are one-piece full-body; Outfit is a head-to-toe styled mix; Bottoms / Skirt
+// are bottoms; everything else defaults to a top.
+function categoryScope(meta){
+  const cat=(meta.category||'').toLowerCase();
+  if(cat==='dress'||cat==='jumpsuit') return 'full';
+  if(cat==='outfit') return 'outfit';
+  if(isBottomGarment(meta)) return 'bottom';
+  return 'top';
+}
 function complementClause(meta){
   const youth = isYouth(meta.model);
-  if(refScope(meta)==='set'){
+  const scope = refScope(meta) || categoryScope(meta);
+  if(scope==='full'){
+    return `ONE-PIECE FULL-BODY GARMENT: the ${meta.category} is a complete one-piece outfit (dress, jumpsuit or full-length piece) worn on its own. Do NOT add or layer a separate top or bottom — no added trousers, no added shirt. Style only with appropriate footwear and, if needed, minimal accessories. Show the model's hands and full-length head-to-toe styling so the whole garment reads.`;
+  }
+  if(scope==='outfit'){
+    return `HEAD-TO-TOE STYLED LOOK: the model wears the referenced pieces together as one coordinated full outfit from top to bottom. Render each piece faithfully as its own garment; do NOT merge them into a single garment or substitute any piece. Add only appropriate footwear and minimal accessories. Full-length head-to-toe framing with the model's hands visible.`;
+  }
+  if(scope==='set'){
     return `TWO-PIECE SET: the model wears BOTH the hero TOP and the hero BOTTOM from the reference images together as one coordinated outfit. Both are hero pieces — render each faithfully. Add only appropriate footwear and, if needed, minimal accessories; do NOT introduce any additional or substitute top or bottom garment beyond the two reference pieces. Show the model's hands and full-length styling so both pieces read clearly.`;
   }
   if(isBottomGarment(meta)){
@@ -1133,20 +1183,30 @@ function complementClause(meta){
   return `Show the model's hands and waist. The model wears ${youth?'simple, age-appropriate neutral bottoms':'neutral, professional trousers'} that complement the ${meta.category}.`;
 }
 // Authoritative reference clause. Describes the attached reference image(s) in
-// the SAME order callGemini attaches them (top first, then bottom) so the
-// "FIRST / SECOND" wording always lines up. Empty when no reference is loaded.
+// the SAME order callGemini attaches them (full first, then top, then bottom) so
+// the "FIRST / SECOND" wording always lines up. Empty when no reference is loaded.
 function referenceClause(meta){
   const scope = refScope(meta);
   if(!scope) return '';
+  const fullFirst = `The FIRST attached reference image shows the EXACT one-piece full-body garment to depict — reproduce its garment TYPE (dress, jumpsuit, or full-length piece), neckline/collar, sleeve/strap, bodice, waist, skirt/leg shape, length, closure, construction, seams, pattern, drape and color precisely. Do NOT split it into separate top and bottom garments, add pieces it does not have, or convert it into a different garment type.`;
+  const outfitFirst = `The FIRST attached reference image shows a complete HEAD-TO-TOE styled look — reproduce the full outfit faithfully, keeping each visible garment's TYPE, color, fabric, construction and proportions. Keep it a coordinated multi-piece look; do NOT merge the pieces into one garment or substitute them.`;
   const topFirst = `The FIRST attached reference image shows the EXACT TOP garment to depict — reproduce its garment TYPE, neckline/collar, sleeve length, closure (pullover vs buttoned placket), body length, hem, construction, seams, stripe/pattern, drape and color precisely. Do NOT turn it into a different garment type or add a collar, buttons, plackets, pockets or sleeves the reference does not have.`;
   const bottomFirst = `The FIRST attached reference image shows the EXACT BOTTOM garment to depict — reproduce its garment TYPE (trouser, jean, short, skirt, etc.), rise, waistband, leg/hem shape, length, construction, seams, pattern, drape and color precisely. Do NOT turn it into a different garment type or add a second layer of bottoms.`;
   const bottomSecond = bottomFirst.replace('The FIRST','The SECOND');
+  if(scope==='full') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${fullFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
+  if(scope==='outfit') return `REFERENCE LOOK (AUTHORITATIVE — HIGHEST PRIORITY): ${outfitFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.`;
   if(scope==='top') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${topFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
   if(scope==='bottom') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${bottomFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
   return `REFERENCE GARMENTS (AUTHORITATIVE — HIGHEST PRIORITY): TWO reference images are attached showing a coordinated top-and-bottom SET. ${topFirst} ${bottomSecond} Reproduce BOTH garments as the same physical pieces; do not merge them into one garment, swap their types, or substitute either piece. If a reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.`;
 }
-// ---------- GHOST-MANNEQUIN SUBJECT (adapts to top / bottom / set) ----------
+// ---------- GHOST-MANNEQUIN SUBJECT (adapts to top / bottom / set / full / outfit) ----------
 function ghostMannequinStyle(scope, meta){
+  if(scope==='full'){
+    return `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a ONE-PIECE full-length ${meta.category} (dress, jumpsuit or full-body garment). An invisible full-body form gives natural 3D volume and drape from the neckline and shoulders through the waist to the hem / leg openings, but is 100% invisible — only the garment fabric is visible; no head, no neck post, no visible torso, arms, legs or feet, no stand. The neckline reads as a clean open hollow showing the inside. The hem (or leg openings) hangs naturally with realistic folds and fabric weight. Straight direct front-facing camera, symmetrical, centered, the full length in frame.`;
+  }
+  if(scope==='outfit'){
+    return `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a complete HEAD-TO-TOE styled look — every garment of the outfit worn together on a single invisible full-body form and aligned as one cohesive head-to-toe outfit. The invisible mannequin gives natural 3D volume and drape to each piece but is 100% invisible — only the garment fabric is visible; no head, no neck post, no visible torso, arms, legs or feet, no stand. Top openings read as clean open hollows showing the inside. Realistic folds and fabric weight. Straight direct front-facing camera, symmetrical, centered, the full head-to-toe look in frame.`;
+  }
   if(scope==='set'){
     return `STYLE: High-resolution photorealistic 3D e-commerce ghost-mannequin product shot of a coordinated TWO-PIECE SET — the hero TOP garment in the upper portion and the hero BOTTOM garment below it, worn together on a single invisible full-body form and aligned as one cohesive outfit. The invisible mannequin gives natural 3D volume and drape to both pieces but is 100% invisible — only the garment fabric is visible; no neck post, no visible torso or leg form, no stand. The top's neck opening is a clean open hollow showing the inside collar. Realistic folds and fabric weight. Straight direct front-facing camera, symmetrical, centered, both pieces fully in frame.`;
   }
@@ -1157,11 +1217,14 @@ function ghostMannequinStyle(scope, meta){
 }
 function ghostZeroPartsRule(scope){
   if(scope==='bottom') return "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no plastic form, no legs, no feet, no torso, no base, no clips, no hangers, no rods. Only the garment fabric floating in 3D space, holding its shape as if worn. The waistband is a clean open hollow showing the inside waistband.";
+  if(scope==='full') return "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no head, no neck post, no visible torso, arms, legs or feet, no shoulder supports, no base, no clips, no rods. Only the one-piece garment fabric floating in 3D space as if worn, from neckline to hem. The neckline is a clean open hollow showing the inside.";
+  if(scope==='outfit') return "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no head, no neck post, no visible torso, arms, legs or feet, no shoulder supports, no base, no clips, no rods, for any piece of the look. Only the outfit's garment fabric floating in 3D space as one worn head-to-toe look. Top openings are open and hollow, showing the inside.";
   if(scope==='set') return "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no head, no visible torso or leg form, no shoulder supports, no base, no clips, no rods, for EITHER the top or the bottom. Only the two garments' fabric floating in 3D space as one worn outfit. The top's neck opening is wide, open and hollow, showing only the inside collar.";
   return "FORCE TRUE GHOST MANNEQUIN — ZERO VISIBLE MANNEQUIN PARTS: no neck post, no plastic cylinder, no torso form outline, no shoulder supports, no base, no clips, no rods. Only the garment fabric floating in 3D space. The neck opening must be wide, fully open and hollow, showing only the inside back collar.";
 }
 function ghostNoHumanRule(scope){
   if(scope==='bottom') return "NO MODEL OR HUMAN PARTS: no human faces, skin, legs, feet, models or mannequin parts. Only the hollow garment with interior fabric visible at the waistband.";
+  if(scope==='full'||scope==='outfit') return "NO MODEL OR HUMAN PARTS: no human faces, skin, arms, legs, feet, models or mannequin heads. Only the hollow garment(s) with interior fabric visible at the openings.";
   if(scope==='set') return "NO MODEL OR HUMAN PARTS: no human faces, skin, arms, legs, feet, models or mannequin heads. Only the two hollow garments with interior fabric visible at their openings.";
   return "NO MODEL OR HUMAN PARTS: no human faces, skin, arms, legs, models or mannequin heads. The neck opening shows only the hollow interior fabric.";
 }
@@ -1198,7 +1261,7 @@ function buildPrompt(meta){
     : cutout
       ? "ON-MODEL BACKGROUND (CUTOUT): CRITICAL — place the model on a 100% PURE FLAT SOLID WHITE seamless studio background, hex #FFFFFF, exact RGB (255,255,255). NOT off-white, NOT grey, NOT beige. Light the background COMPLETELY EVENLY right up to all four frame edges — the SAME pure white in every corner and along every edge, with NO lighting falloff, NO darkening toward the corners, NO vignette, NO gradient, and NO soft halo, bloom or glow around the model or the hair. NO cast shadows on the background — no floor shadow, no drop shadow. Keep the ENTIRE outline of the model — every strand of hair included — crisply and cleanly separated from the white so it cuts out with a clean edge. The background must be one single uniform flat #FFFFFF value edge to edge so it can be isolated perfectly. No props, no scenery, no text."
       : backdropClause(meta);
-  const rScope = isRender ? (refScope(meta) || (isBottomGarment(meta) ? 'bottom' : 'top')) : null;
+  const rScope = isRender ? (refScope(meta) || categoryScope(meta)) : null;
   const styleRule = isRender
     ? ghostMannequinStyle(rScope, meta)
     : `STYLE: High-end editorial fashion campaign photograph. ${cap(modelNoun(meta.model))} wearing the ${meta.category} as the hero garment. Model details — Sex: ${meta.model.gender}; Age: ${meta.model.age}${isYouth(meta.model)?` (${meta.model.ageGroup} model)`:''}; Ethnicity: ${meta.model.ethnicity||'unspecified'}; Skin tone: ${meta.model.skin||'natural'}; Hair: ${meta.model.hair||'natural'}. ${complementClause(meta)}${youthClause(meta.model)} Natural, relaxed pose, photorealistic skin and hair, sharp focus on garment construction.`;
@@ -1252,9 +1315,9 @@ async function buildClaudePrompt(localPrompt, meta){
 // =====================================================================
 async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false){
   const parts = [{ text: prompt }];
-  // Attach the top reference first, then the bottom, so the prompt's
-  // "FIRST … / SECOND …" wording lines up with the image order.
-  [S.refTop, S.refBottom].forEach(ref=>{
+  // Attach the full-body reference first (when present), then the top, then the
+  // bottom, so the prompt's "FIRST … / SECOND …" wording lines up with the order.
+  [S.refFull, S.refTop, S.refBottom].forEach(ref=>{
     if(!ref) return;
     const mime = ref.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
     parts.push({ inline_data:{ data:ref.split(',')[1], mime_type:mime } });
@@ -1294,9 +1357,8 @@ async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false)
 // =====================================================================
 // REQUIRED-FIELD GATE (V3.5)
 // Minimum to launch a run: Style Name, at least 1 Source reference,
-// Garment Category, Fabric Texture, Fit Profile, and — only when Render
-// Mode is On-Model or Move — a Model Age Group. Missing fields are
-// outlined in red and named in a single toast.
+// Garment Category, Fabric Texture, Fit Profile, and (On-Model/Move only)
+// Model Age Group. Missing fields are outlined in red and named in a toast.
 // =====================================================================
 function clearMark(id){ const el=document.getElementById(id); if(el) el.classList.remove('field-missing'); }
 function markMissing(ids){ ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('field-missing'); }); }
@@ -1307,7 +1369,7 @@ function validateRun(){
   const usesModel=(S.mode==='model'||S.mode==='move');
   const missing=[], marks=[];
   if(!styleName){ missing.push('Style Name'); marks.push('styleName'); }
-  if(!(S.refTop||S.refBottom)){ missing.push('Source reference (1 min)'); marks.push('refGrid'); }
+  if(!(S.refTop||S.refBottom||S.refFull)){ missing.push('Source reference (1 min)'); marks.push('refGrid'); }
   if(!S.category){ missing.push('Garment Category'); marks.push('catGroup'); }
   if(!fabricVal){ missing.push('Fabric Texture'); marks.push('fabric'); }
   if(!S.fit){ missing.push('Fit Profile'); marks.push('fitGroup'); }
@@ -1344,7 +1406,8 @@ async function generate(){
     notes: document.getElementById('notes').value.trim(),
     hasTopRef: !!S.refTop,
     hasBottomRef: !!S.refBottom,
-    hasRef: !!(S.refTop||S.refBottom),
+    hasFullRef: !!S.refFull,
+    hasRef: !!(S.refTop||S.refBottom||S.refFull),
     motion: document.getElementById('moveMotion').value,
     frames: parseInt(document.getElementById('moveFrames').value,10)||5,
     engine: S.moveEngine,
@@ -1467,8 +1530,10 @@ function showResult(render){
                 :                  '<span class="tag">ON MODEL</span>';
   const angleTag = ((mode==='model'||mode==='move') && render.meta.angle && render.meta.angle!=='front')
     ? `<span class="tag dim">${angleLabel(render.meta.angle)}</span>` : '';
-  const rt = render.meta.hasTopRef, rb = render.meta.hasBottomRef;
-  const refTag = (rt&&rb) ? '<span class="tag dim">SET · TOP+BOTTOM</span>'
+  const rt = render.meta.hasTopRef, rb = render.meta.hasBottomRef, rf = render.meta.hasFullRef;
+  const isOutfit = /^outfit$/i.test(render.meta.category||'');
+  const refTag = rf ? (isOutfit ? '<span class="tag dim">OUTFIT LOOK</span>' : '<span class="tag dim">FULL-BODY REF</span>')
+               : (rt&&rb) ? '<span class="tag dim">SET · TOP+BOTTOM</span>'
                : rb ? '<span class="tag dim">BOTTOM REF</span>'
                : rt ? '<span class="tag dim">TOP REF</span>' : '';
   const sizeTag = isVideo
@@ -1931,12 +1996,6 @@ async function framesToGif(canvases, delay){
 //    unchanged from SweaterVision — only removes pixels reachable from the
 //    image edges; interior pixels are protected so light garments survive.
 //  · On-Model cutout (mode 'model'): gradient-tolerant hysteresis matte.
-//    On-Model scenes carry soft studio lighting and a halo through hair
-//    that the flat-white fill can't cross, which used to leave a white
-//    slab of un-removed background around the figure. This path follows
-//    the soft halo/gradient out to a looser bound (THR_HIGH) while
-//    definite-subject pixels (anchors) block the fill, so interior light
-//    garment areas stay protected by enclosure.
 // =====================================================================
 async function removeBg(b64, mode){
   return new Promise(res=>{
@@ -1962,17 +2021,12 @@ async function removeBg(b64, mode){
           const N=W*H;
           const THR_LOW=THR;                          // confident background
           const THR_HIGH=Math.round(THR*2.0);         // halo / gradient tolerance
-          // Definite-subject anchors block the fill (skin, hair, colored
-          // garment, tan trousers all sit well beyond THR_HIGH from white).
           const anchor=new Uint8Array(N);
           for(let i=0;i<N;i++){const pi=i*4; if(dist(d[pi],d[pi+1],d[pi+2])>THR_HIGH) anchor[i]=1;}
           const crossable=i=>{ if(anchor[i]) return false; const pi=i*4; return dist(d[pi],d[pi+1],d[pi+2])<=THR_HIGH; };
           const confident=i=>{ const pi=i*4; return dist(d[pi],d[pi+1],d[pi+2])<=THR_LOW; };
           const visited=new Uint8Array(N);
           const removed=new Uint8Array(N);
-          // Edge-seeded hysteresis flood. A connected soft-background region is
-          // only cut if it also contains a confident (<=THR_LOW) background
-          // pixel, so a light garment that merely grazes the frame edge is kept.
           function floodFrom(seed){
             const bucket=[]; const st=[seed]; visited[seed]=1; let hasConfident=false;
             while(st.length){
@@ -1987,7 +2041,6 @@ async function removeBg(b64, mode){
           }
           for(let x=0;x<W;x++){ const t=x, b=(H-1)*W+x; if(!visited[t]&&crossable(t))floodFrom(t); if(!visited[b]&&crossable(b))floodFrom(b); }
           for(let y=0;y<H;y++){ const l=y*W, r=y*W+(W-1); if(!visited[l]&&crossable(l))floodFrom(l); if(!visited[r]&&crossable(r))floodFrom(r); }
-          // Alpha + 1px feather along the cut boundary for a clean edge.
           const alpha=new Float32Array(N);
           for(let i=0;i<N;i++) alpha[i]=removed[i]?0:1;
           for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -2004,11 +2057,8 @@ async function removeBg(b64, mode){
         // ============================================================
         // GHOST-MANNEQUIN (flat #FFFFFF) -> original safe-zone flood fill.
         // ============================================================
-        // 2. Threshold for "is this pixel background-colored?"
-        // 3. Anchor mask — pixels clearly NOT background-colored
         const anchor=new Uint8Array(W*H);
         for(let i=0;i<W*H;i++){const pi=i*4;if(dist(d[pi],d[pi+1],d[pi+2])>THR)anchor[i]=1;}
-        // 4. Safe zone — BFS from anchors, blocked by bg-like pixels
         const PROP_THR=Math.max(6,THR/5);
         const safe=new Uint8Array(W*H);
         const queue=new Int32Array(W*H); let qh=0,qt=0;
@@ -2019,7 +2069,6 @@ async function removeBg(b64, mode){
           if(x>0)nb.push(i-1); if(x<W-1)nb.push(i+1); if(y>0)nb.push(i-W); if(y<H-1)nb.push(i+W);
           for(const ni of nb){ if(safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])>PROP_THR){ safe[ni]=1; queue[qt++]=ni; } }
         }
-        // 5. Edge-seeded flood fill marks bg pixels, skipping safe zone
         const vis=new Uint8Array(W*H);
         const stack=[];
         const seed=(x,y)=>{ const i=y*W+x; if(vis[i]||safe[i])return; const pi=i*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[i]=1; stack.push(i); } };
@@ -2030,7 +2079,6 @@ async function removeBg(b64, mode){
           const ns=[]; if(x>0)ns.push(i-1); if(x<W-1)ns.push(i+1); if(y>0)ns.push(i-W); if(y<H-1)ns.push(i+W);
           for(const ni of ns){ if(vis[ni]||safe[ni])continue; const pi=ni*4; if(dist(d[pi],d[pi+1],d[pi+2])<=THR){ vis[ni]=1; stack.push(ni); } }
         }
-        // 6. Soft 1-pixel feather at boundary, then write alpha
         const alpha=new Float32Array(W*H);
         for(let i=0;i<W*H;i++) alpha[i]=vis[i]?0:1;
         for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -2124,7 +2172,7 @@ function loadIntoForm(r){
   document.getElementById('fabricContent').value=r.meta.fabricContent||'';
   document.getElementById('fabric').value=r.meta.fabric;
   document.getElementById('notes').value=r.meta.notes||'';
-  S.refTop=null; S.refBottom=null; clearRef('top'); clearRef('bottom');
+  S.refTop=null; S.refBottom=null; S.refFull=null; clearRef('top'); clearRef('bottom'); clearRef('full');
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   setAngle(r.meta.angle||'front');
   if(r.meta.backdrop){
