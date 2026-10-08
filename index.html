@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V3.6</title>
+<title>RD STYLE AI STUDIO — V3.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -286,7 +286,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.6</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.7</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -535,7 +535,7 @@ select.select option{background:#0d0d0d}
             <input type="number" min="72" max="1200" step="1" id="specDpi" class="text-input" value="300" oninput="onDpiEdit()"/>
           </div>
         </div>
-        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG · 300 DPI</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>). For On-Model shots, <b>Transparent</b> cuts the model out to alpha; any other setting uses the <b>Photoshoot Backdrop</b> color chosen in Model Configuration. <b>DPI</b> is print metadata — it sets the physical print size, not pixel count; raise Width/Height for more actual detail.</div>
+        <div class="note-box" id="specNote">Exact size is enforced after generation. Output: <b id="specSummary">1200×1600 · Contain · PNG · 300 DPI</b>. The model is steered to the nearest supported ratio (<b id="specAR">3:4</b>). For On-Model shots, <b>Transparent</b> cuts the model out to alpha; any other setting uses the <b>Photoshoot Backdrop</b> color chosen in Model Configuration. <b>DPI</b> is print metadata — it sets the physical print size, not pixel count; raise Width/Height for more actual detail. Renders are generated at high native resolution (2K–4K) and scaled down to your exact size for maximum sharpness.</div>
       </section>
       <button class="generate-btn" id="genBtn" onclick="generate()">
         <svg id="genIcon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -675,6 +675,11 @@ select.select option{background:#0d0d0d}
 // Full-Body / Head-to-Toe, for one-piece garments (dress/jumpsuit) and
 // re-coloring existing head-to-toe shots. Two new garment scopes: 'full'
 // (one-piece full-body) and 'outfit' (head-to-toe styled mix).
+// V3.7 — HIGH-RES / ANTI-BLUR: always request a high native generation
+// resolution from Gemini (pickImageSize -> 2K floor, 4K for larger specs) so
+// the final fitToSpec step only ever DOWNSCALES (crisp) instead of upscaling
+// (blurry), plus high-quality, progressively-halved canvas resampling across
+// fitToSpec, normFrame and downscaleDataURL. Renders are now consistently sharp.
 // =====================================================================
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
@@ -1328,7 +1333,14 @@ async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false)
     parts.push({ inline_data:{ data:ex.split(',')[1], mime_type:m } });
   }
   const genCfg = { responseModalities:['IMAGE','TEXT'] };
-  if(meta.aspectRatio && !dropAR) genCfg.imageConfig = { aspectRatio: meta.aspectRatio };
+  // V3.7: always ask for a high native resolution so the result is DOWNSCALED,
+  // not upscaled, into the final output size (the anti-blur fix). aspectRatio and
+  // imageSize ride together in imageConfig; the 400 fallback below drops the whole
+  // imageConfig if an API revision rejects either field.
+  if(!dropAR){
+    genCfg.imageConfig = { imageSize: pickImageSize(meta && meta.spec) };
+    if(meta.aspectRatio) genCfg.imageConfig.aspectRatio = meta.aspectRatio;
+  }
   const delays = [2000,4000,8000];
   const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${S.apiKey}`,{
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -1618,7 +1630,8 @@ async function downscaleDataURL(src, max){
   let w=im.width, h=im.height;
   if(Math.max(w,h)>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
   const c=document.createElement('canvas'); c.width=w; c.height=h;
-  c.getContext('2d').drawImage(im,0,0,w,h);
+  const ctx=c.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; // V3.7: crisp downscale
+  ctx.drawImage(scaledSource(im,w,h),0,0,w,h);
   return c.toDataURL('image/jpeg',0.9);
 }
 function renderGarmentLock(){
@@ -1830,17 +1843,43 @@ Full-body or 3/4 framing with the garment clearly visible. Sharp, photoreal, 3:4
 function loadImg(src){
   return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('Frame failed to load')); im.src=src; });
 }
+// V3.7 — pick the native generation resolution. Choose the smallest supported
+// tier whose long edge comfortably covers the target output so the final resize
+// only ever downsamples. 2K floor keeps even small/social outputs razor-sharp.
+function pickImageSize(spec){
+  const longEdge = spec ? Math.max(spec.width||0, spec.height||0) : 0;
+  return longEdge > 2048 ? '4K' : '2K';
+}
+// V3.7 — progressive half-step downscale. A single huge->small drawImage softens
+// detail; halving toward the target keeps edges crisp. Returns the source (or an
+// intermediate canvas) sized within ~2x of the requested draw dimensions.
+function scaledSource(im, dw, dh){
+  let sw = im.width || im.naturalWidth, sh = im.height || im.naturalHeight;
+  dw = Math.max(1, Math.round(dw)); dh = Math.max(1, Math.round(dh));
+  if(!sw || !sh || sw <= dw || sh <= dh) return im;   // upscale / equal -> draw directly
+  let src = im;
+  while(sw > dw*2 && sh > dh*2){
+    sw = Math.max(dw, sw>>1); sh = Math.max(dh, sh>>1);
+    const t = document.createElement('canvas'); t.width=sw; t.height=sh;
+    const tctx = t.getContext('2d'); tctx.imageSmoothingEnabled=true; tctx.imageSmoothingQuality='high';
+    tctx.drawImage(src, 0, 0, sw, sh);
+    src = t;
+  }
+  return src;
+}
 // place a frame onto a uniform canvas (cover = fill+crop, contain = fit+pad)
 async function normFrame(src, FW, FH, fit='cover', bg='#000000'){
   const im = await loadImg(src);
   const c = document.createElement('canvas'); c.width=FW; c.height=FH;
-  const ctx = c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,FW,FH);
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';   // V3.7: crisp resample
+  ctx.fillStyle=bg; ctx.fillRect(0,0,FW,FH);
   const ir = im.width/im.height, fr = FW/FH;
   let dw, dh, dx, dy;
   if(fit==='contain'){ if(ir>fr){ dw=FW; dh=dw/ir; } else { dh=FH; dw=dh*ir; } }
   else               { if(ir>fr){ dh=FH; dw=dh*ir; } else { dw=FW; dh=dw/ir; } }
   dx=(FW-dw)/2; dy=(FH-dh)/2;
-  ctx.drawImage(im, dx, dy, dw, dh);   // cover overflow is auto-clipped to canvas
+  ctx.drawImage(scaledSource(im, dw, dh), dx, dy, dw, dh);   // V3.7: half-step downscale; cover overflow clipped to canvas
   return c;
 }
 // Finish a still at EXACT pixel dimensions + format (the customer-spec step).
@@ -1850,6 +1889,7 @@ async function fitToSpec(src, spec, fillColor){
     const W = spec.width, H = spec.height;
     const c = document.createElement('canvas'); c.width=W; c.height=H;
     const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';   // V3.7: crisp resample
     const fill = fillColor || ((spec.format==='jpeg' || spec.bg==='white') ? '#ffffff' : null);
     if(fill){ ctx.fillStyle=fill; ctx.fillRect(0,0,W,H); }
     const ir = im.width/im.height, fr = W/H;
@@ -1857,7 +1897,7 @@ async function fitToSpec(src, spec, fillColor){
     if(spec.fit==='cover'){ if(ir>fr){ dh=H; dw=dh*ir; } else { dw=W; dh=dw/ir; } }
     else                  { if(ir>fr){ dw=W; dh=dw/ir; } else { dh=H; dw=dh*ir; } }
     dx=(W-dw)/2; dy=(H-dh)/2;
-    ctx.drawImage(im, dx, dy, dw, dh);
+    ctx.drawImage(scaledSource(im, dw, dh), dx, dy, dw, dh);   // V3.7: half-step downscale -> sharp
     const url = spec.format==='jpeg' ? c.toDataURL('image/jpeg', spec.quality||0.9) : c.toDataURL('image/png');
     return applyDpi(url, spec.dpi||300);
   }catch(e){ console.warn('fitToSpec failed, returning original',e); return src; }
