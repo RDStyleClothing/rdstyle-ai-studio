@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V3.7</title>
+<title>RD STYLE AI STUDIO — V3.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -286,7 +286,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.7</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.8</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -680,6 +680,12 @@ select.select option{background:#0d0d0d}
 // the final fitToSpec step only ever DOWNSCALES (crisp) instead of upscaling
 // (blurry), plus high-quality, progressively-halved canvas resampling across
 // fitToSpec, normFrame and downscaleDataURL. Renders are now consistently sharp.
+// V3.8 — SEX FIX: the selected model Sex (Male / Female / Non-binary, and
+// Boy / Girl for kids) now drives the render. The prompt header subject
+// (womenswear / menswear / apparel), the model noun, and a new mandatory
+// sexClause() all reflect the chosen sex, so Female no longer renders a male
+// model. Previously the fixed "menswear" header + gender-neutral model noun
+// overrode the buried "Sex:" line and Gemini defaulted to male.
 // =====================================================================
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
@@ -1239,10 +1245,27 @@ function ghostNoHumanRule(scope){
 // (no ageGroup on meta.model) are treated as Adult, so nothing regresses.
 function isYouth(model){ return !!model && (model.ageGroup==='child'||model.ageGroup==='teen'); }
 function cap(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
+// V3.8 — sex helpers. 'Female' contains the substring 'male', so female is
+// always tested first and excluded from the male test.
+function isFemaleGender(g){ return /\b(female|woman|women|girl)\b/i.test(g||''); }
+function isMaleGender(g){ return !isFemaleGender(g) && /\b(male|man|men|boy)\b/i.test(g||''); }
 function modelNoun(model){
-  if(model && model.ageGroup==='child') return 'a real child model';
-  if(model && model.ageGroup==='teen') return 'a real teenage model';
-  return 'a real adult human model';
+  const g=(model&&model.gender)||'';
+  const f=isFemaleGender(g), m=isMaleGender(g);
+  if(model && model.ageGroup==='child') return f?'a real girl child model':m?'a real boy child model':'a real child model';
+  if(model && model.ageGroup==='teen') return f?'a real teenage girl model':m?'a real teenage boy model':'a real teenage model';
+  return f?'a real adult woman (female) model':m?'a real adult man (male) model':'a real adult human model';
+}
+// Mandatory, high-priority instruction locking the model's sex so Gemini does
+// not default to a male model when Female / Girl is selected. Empty for
+// Non-binary (handled with an androgynous steer) so it never adds a blank rule.
+function sexClause(model){
+  const g=(model&&model.gender)||'';
+  if(/non-?binary/i.test(g)) return 'MODEL SEX (MANDATORY): the model is androgynous / non-binary in presentation — do NOT default to a conventionally male model.';
+  const f=isFemaleGender(g), m=isMaleGender(g);
+  if(f){ const noun=model&&model.ageGroup==='child'?'girl':model&&model.ageGroup==='teen'?'teenage girl':'adult woman'; return `MODEL SEX (MANDATORY — HIGHEST PRIORITY): the model MUST be a ${noun} — unmistakably female, with feminine features, build and styling. This is a WOMEN'S / girls' garment shot. Do NOT render a male or boy model under any circumstances, regardless of the reference image.`; }
+  if(m){ const noun=model&&model.ageGroup==='child'?'boy':model&&model.ageGroup==='teen'?'teenage boy':'adult man'; return `MODEL SEX (MANDATORY — HIGHEST PRIORITY): the model MUST be a ${noun} — unmistakably male. Do NOT render a female or girl model.`; }
+  return '';
 }
 function youthClause(model){
   if(!isYouth(model)) return '';
@@ -1251,9 +1274,11 @@ function youthClause(model){
   return ` WHOLESOME ${kind} CATALOG IMAGE: the ${who} is fully, modestly and appropriately dressed in the garment, with age-appropriate styling and a natural, relaxed, playful pose. Family-friendly commercial apparel-catalog context only — no adult styling, no suggestive posing.`;
 }
 function headerSubject(model){
-  if(model && model.ageGroup==='child') return "children's apparel";
-  if(model && model.ageGroup==='teen') return 'youth apparel';
-  return 'menswear';
+  const g=(model&&model.gender)||'';
+  const f=isFemaleGender(g), m=isMaleGender(g);
+  if(model && model.ageGroup==='child') return f?"girls' apparel":m?"boys' apparel":"children's apparel";
+  if(model && model.ageGroup==='teen') return f?"young women's / teen apparel":m?"young men's / teen apparel":'youth apparel';
+  return f?'womenswear':m?'menswear':'apparel';
 }
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
@@ -1280,6 +1305,7 @@ function buildPrompt(meta){
     ghostNoHumanRule(rScope),
     "DIMENSIONS: strictly 3:4 portrait (1200×1600). Garment beautifully centered with ~15% margin from all borders so nothing clips.",
   ] : [
+    sexClause(meta.model),
     bgRule,
     styleRule,
     angleClause(meta.angle),
@@ -1297,7 +1323,7 @@ PRIMARY FABRIC: ${fabricStr}   |   FIT: ${meta.fit}
 ART DIRECTION: ${meta.notes || 'Follow the reference and category conventions closely.'}
 ${refLine}
 CRITICAL RULES (ABSOLUTE COMPLIANCE — NO EXCEPTIONS):
-${rules.map((r,i)=>`${i+1}. ${r}`).join('\n')}
+${rules.filter(Boolean).map((r,i)=>`${i+1}. ${r}`).join('\n')}
 TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: ${colorStr ? `the garment colorway is ${colorStr} — render this exact color faithfully and consistently across the whole garment.` : 'match the colorway named in the style.'} Luxury catalog realism throughout.`;
 }
 // Optional: rewrite art direction into a tighter prompt via Claude
@@ -1685,6 +1711,7 @@ function buildMoveStillPrompt(meta){
   const refClause = referenceClause(meta);
   return `High-end editorial fashion campaign photograph — full body, head to toe, photorealistic. ${cap(modelNoun(meta.model))} wearing the ${meta.category} — "${meta.styleName}"${colorStr?` in colorway ${colorStr}`:''} — as the hero garment (fabric: ${meta.fabric}${meta.fabricContent?', '+meta.fabricContent:''}; fit: ${meta.fit}).
 MODEL — Sex: ${m.gender}; Age: ${m.age}${isYouth(meta.model)?` (${meta.model.ageGroup} model)`:''}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
+${sexClause(meta.model)}
 ${angleClause(meta.angle)}
 ${complementClause(meta)}${youthClause(meta.model)}
 ${refClause}
