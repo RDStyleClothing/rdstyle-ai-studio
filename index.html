@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V3.8</title>
+<title>RD STYLE AI STUDIO — V3.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -278,6 +278,26 @@ select.select option{background:#0d0d0d}
 .toast .i{width:7px;height:7px;border-radius:50%;background:var(--good);flex-shrink:0}
 .toast.err .i{background:var(--danger)}
 @keyframes toastin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* TARGET COLOUR + RECOLOUR (V3.9) */
+.tc-row{display:flex;gap:8px;align-items:center}
+.tc-swatch{width:42px;height:42px;flex-shrink:0;border-radius:10px;border:1px solid var(--line);position:relative;overflow:hidden;cursor:pointer;display:block;background:var(--fill)}
+.tc-swatch input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0}
+.tc-btn{width:42px;height:42px;flex-shrink:0;border-radius:10px;border:1px solid var(--line);background:var(--fill);color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .2s}
+.tc-btn:hover{color:#fff;border-color:rgba(255,255,255,0.3)}
+.tc-btn.on{background:#fff;color:#000;border-color:#fff}
+.tc-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.tc-readout{font-family:var(--font-mono);font-size:9px;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);margin-top:9px;line-height:1.5;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tc-dot{width:13px;height:13px;border-radius:3px;border:1px solid var(--line);display:inline-block}
+.sampling .ref-preview img{cursor:crosshair}
+.cw-base{width:60px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex-shrink:0}
+.cw-add{display:flex;gap:8px;align-items:center;margin-top:4px}
+.cw-swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:4px}
+.cw-chip{display:flex;align-items:center;gap:8px;background:var(--fill);border:1px solid var(--line);border-radius:999px;padding:5px 10px 5px 6px;font-size:11px}
+.cw-chip .dot{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);flex-shrink:0}
+.cw-chip .mono{font-size:9px;color:var(--muted)}
+.cw-chip button{color:var(--muted);display:flex;padding:2px}
+.cw-chip button:hover{color:var(--danger)}
+.cw-chip button svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5}
 </style>
 </head>
 <body>
@@ -286,7 +306,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.8</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V3.9</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -329,6 +349,18 @@ select.select option{background:#0d0d0d}
         </div>
         <div class="note-box hidden" id="autofillNote" style="margin-top:12px">
           <b>Auto-filled from filename.</b> <span id="autofillText"></span> Review and edit the fields above, then Create when correct.
+        </div>
+        <div style="margin-top:14px">
+          <label class="sub-label">Target Colour <span style="opacity:0.5">(optional — boosts colour accuracy)</span></label>
+          <div class="tc-row">
+            <label class="tc-swatch" id="tcSwatch" title="Pick a colour">
+              <input type="color" id="tcPicker" value="#808080" oninput="onTargetHexInput(this.value)"/>
+            </label>
+            <input type="text" id="tcHex" class="text-input" placeholder="#RRGGBB" style="flex:1" oninput="onTargetHexInput(this.value)"/>
+            <button type="button" class="tc-btn" id="tcEyedrop" title="Sample from the reference image" onclick="startEyedropper()"><svg viewBox="0 0 24 24"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg></button>
+            <button type="button" class="tc-btn" id="tcClear" title="Clear target colour" onclick="clearTargetColor()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="tc-readout" id="tcReadout">No target colour set — using the colour name / code text above.</div>
         </div>
       </section>
       <section>
@@ -658,6 +690,36 @@ select.select option{background:#0d0d0d}
     <button class="rate-skip" onclick="hideRate()">Skip and close →</button>
   </div>
 </div>
+<!-- RECOLOUR / COLOURWAYS MODAL -->
+<div class="modal-overlay hidden" id="recolorModal">
+  <div class="modal-box" style="max-width:520px">
+    <h2 class="modal-title">Recolour · Colourways</h2>
+    <button class="modal-close" onclick="hideRecolor()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px">
+      <img id="cwBase" class="cw-base" alt="Base render"/>
+      <div style="flex:1;min-width:0">
+        <div class="modal-label">Base render</div>
+        <div id="cwBaseName" style="font-size:14px;font-weight:700;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div id="cwBaseSub" class="modal-note" style="margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Add target colours</label>
+      <div class="cw-add">
+        <label class="tc-swatch" title="Pick a colour"><input type="color" id="cwPicker" value="#3A5A40"/></label>
+        <input type="text" id="cwName" class="text-input" placeholder="Colour name (optional)" style="flex:1"/>
+        <button type="button" class="btn-secondary" style="flex:0 0 auto;padding:12px 18px" onclick="addRecolorSwatch()">Add</button>
+      </div>
+      <div class="cw-swatches" id="cwSwatches"></div>
+    </div>
+    <div class="modal-info warn" id="cwNote">Each colour re-renders the approved image with only the garment colour changed — construction, model and background held. Solids work best; multi-colour / stripe styles may shift.</div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="hideRecolor()">Cancel</button>
+      <button class="btn-primary" id="cwGenBtn" onclick="generateColorways()">Generate colourways</button>
+    </div>
+    <p class="modal-foot" id="cwProgress"></p>
+  </div>
+</div>
 <div class="toast-wrap" id="toastWrap"></div>
 <script>
 "use strict";
@@ -680,13 +742,15 @@ select.select option{background:#0d0d0d}
 // the final fitToSpec step only ever DOWNSCALES (crisp) instead of upscaling
 // (blurry), plus high-quality, progressively-halved canvas resampling across
 // fitToSpec, normFrame and downscaleDataURL. Renders are now consistently sharp.
-// V3.8 — SEX FIX: the selected model Sex (Male / Female / Non-binary, and
-// Boy / Girl for kids) now drives the render. The prompt header subject
-// (womenswear / menswear / apparel), the model noun, and a new mandatory
-// sexClause() all reflect the chosen sex, so Female no longer renders a male
-// model. Previously the fixed "menswear" header + gender-neutral model noun
-// overrode the buried "Sex:" line and Gemini defaulted to male.
 // =====================================================================
+// V3.8 — SEX FIX: the selected model Sex (Male / Female / Non-binary, Boy / Girl)
+// now drives the render via sexClause(), a sex-aware modelNoun() and headerSubject().
+// V3.9 — RECOLOUR: ported SweaterVision's colour stack (Pantone DB + plain-English
+// descriptor via buildColorContext). New "Target Colour" control (hex / picker /
+// eyedropper from the reference) injects an exact-colour line into the render prompt
+// for far better colour accuracy. New Recolour / Colourways workflow re-renders any
+// approved still into new colourways — garment colour changes, everything else held —
+// reusing the multi-reference garment-lock mechanism (callGemini refsOverride).
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
@@ -745,6 +809,7 @@ const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
   mode:'render', category:'', fit:'', angle:'front', ageGroup:'',
   bgColor:'#FFFFFF', bgColorLabel:'White', naturalLight:false, gradient:false,
+  targetColor:null,          // target garment colour hex (per-garment, not persisted)
   moveEngine:'veo',
   refTop:null, refBottom:null, refFull:null,   // top / bottom / full-body garment references (any combination)
   lockedModel:null,        // { image, label } — reused as identity reference
@@ -1111,6 +1176,83 @@ function clearRef(which){
   updateRefModeNote();
 }
 // =====================================================================
+// =====================================================================
+// COLOUR STACK  (ported verbatim from SweaterVision color.js, v1.19)
+// hex -> nearest Pantone + plain-English descriptor, fed into render prompts.
+// =====================================================================
+const PANTONE_DB = [
+  {name:'Black C',hex:'#2B2B2C'},{name:'Cool Gray 11 C',hex:'#53565A'},
+  {name:'Cool Gray 8 C',hex:'#888B8D'},{name:'Cool Gray 4 C',hex:'#BBBCBC'},
+  {name:'Cool Gray 1 C',hex:'#D9D9D6'},{name:'White',hex:'#F5F5F0'},
+  {name:'2767 C',hex:'#003087'},{name:'289 C',hex:'#003A70'},
+  {name:'286 C',hex:'#0032A0'},{name:'284 C',hex:'#69B3E7'},
+  {name:'2985 C',hex:'#009CDE'},{name:'Process Blue C',hex:'#0085CA'},
+  {name:'Reflex Blue C',hex:'#001489'},
+  {name:'350 C',hex:'#215732'},{name:'348 C',hex:'#007A33'},
+  {name:'355 C',hex:'#009A44'},{name:'361 C',hex:'#43B02A'},
+  {name:'7739 C',hex:'#5E7B2F'},{name:'569 C',hex:'#4A7C59'},
+  {name:'624 C',hex:'#7BA05B'},
+  {name:'1955 C',hex:'#9B2335'},{name:'200 C',hex:'#BA0C2F'},
+  {name:'485 C',hex:'#DA291C'},{name:'1788 C',hex:'#EF3340'},
+  {name:'226 C',hex:'#DF1995'},{name:'1895 C',hex:'#F2A0A1'},
+  {name:'1505 C',hex:'#FF6720'},{name:'151 C',hex:'#FF8200'},
+  {name:'1375 C',hex:'#FFB81C'},{name:'116 C',hex:'#FFCD00'},
+  {name:'2617 C',hex:'#4B2180'},{name:'2612 C',hex:'#6B2A7B'},
+  {name:'2577 C',hex:'#9063CD'},{name:'2715 C',hex:'#6558B1'},
+  {name:'477 C',hex:'#4E3629'},{name:'4695 C',hex:'#7C4D3A'},
+  {name:'729 C',hex:'#C4974F'},{name:'7516 C',hex:'#9E6B4A'},
+  {name:'7527 C',hex:'#C5B9AC'},
+  {name:'9180 C',hex:'#EDE8E1'},{name:'9183 C',hex:'#D4CBB5'},
+  {name:'7512 C',hex:'#D6A461'},{name:'7536 C',hex:'#888B8D'},
+  {name:'3282 C',hex:'#008675'},{name:'321 C',hex:'#009CA6'},
+  {name:'7466 C',hex:'#00B0CA'},
+];
+function hexToRgb(hex){ const n=parseInt(String(hex).replace('#',''),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), l=(max+min)/2;
+  if(max===min) return [0,0,l];
+  const d=max-min, s=l>0.5?d/(2-max-min):d/(max+min);
+  const h = max===r ? ((g-b)/d+(g<b?6:0))/6 : max===g ? ((b-r)/d+2)/6 : ((r-g)/d+4)/6;
+  return [h*360,s,l];
+}
+function getDynamicColorDescriptor(r,g,b){
+  const [h,s,l]=rgbToHsl(r,g,b);
+  if(s<0.08){
+    if(l<0.15) return 'jet black';
+    if(l<0.35) return 'charcoal gray';
+    if(l<0.55) return 'medium gray';
+    if(l<0.80) return 'light gray';
+    return 'off-white ivory';
+  }
+  const name = h<15?'red':h<38?'red-orange':h<55?'orange':h<70?'yellow':
+               h<82?'yellow-green':h<150?'green':h<172?'teal':h<200?'cyan':
+               h<240?'blue':h<258?'blue-violet':h<290?'purple':h<330?'pink':'red';
+  const lp = l<0.2?'deep ':l<0.35?'dark ':l<0.65?'':l<0.82?'light ':'pale ';
+  const sp = s<0.3?'muted ':s>0.85?'vivid ':'';
+  return `${lp}${sp}${name}`;
+}
+function getNearestPantone(hex){
+  const [r,g,b]=hexToRgb(hex);
+  let best=PANTONE_DB[0], bestD=Infinity;
+  for(const p of PANTONE_DB){ const [pr,pg,pb]=hexToRgb(p.hex); const d=(r-pr)**2+(g-pg)**2+(b-pb)**2; if(d<bestD){ bestD=d; best=p; } }
+  return best;
+}
+function buildColorContext(hex){
+  if(!hex) return null;
+  const [r,g,b]=hexToRgb(hex);
+  const pantone=getNearestPantone(hex);
+  return { hex:String(hex).toUpperCase(), rgb:`${r},${g},${b}`, pantone:pantone.name, descriptor:getDynamicColorDescriptor(r,g,b) };
+}
+// Colour-accuracy line for the render prompt. A Target Colour (hex) gives an exact
+// colour + Pantone + descriptor; otherwise fall back to the colour name/code text.
+function colorAccuracyLine(meta, colorStr){
+  const ctx = meta.targetColor ? buildColorContext(meta.targetColor) : null;
+  if(ctx){
+    return `the target garment colour is ${ctx.descriptor} — hex ${ctx.hex}, RGB (${ctx.rgb}), nearest Pantone ${ctx.pantone}${colorStr?` (colorway ${colorStr})`:''}. Render this EXACT colour faithfully and uniformly across the whole garment, discarding any previous base colour and undertones (high-key lighting, soft folds, flat-surface colour matches the swatch).`;
+  }
+  return colorStr ? `the garment colorway is ${colorStr} — render this exact color faithfully and consistently across the whole garment.` : 'match the colorway named in the style.';
+}
 // PROMPT BUILDERS  (render rules ported from SweaterVision)
 // =====================================================================
 // Firm per-angle camera instruction for On-Model & Move stills. Gemini
@@ -1256,9 +1398,8 @@ function modelNoun(model){
   if(model && model.ageGroup==='teen') return f?'a real teenage girl model':m?'a real teenage boy model':'a real teenage model';
   return f?'a real adult woman (female) model':m?'a real adult man (male) model':'a real adult human model';
 }
-// Mandatory, high-priority instruction locking the model's sex so Gemini does
-// not default to a male model when Female / Girl is selected. Empty for
-// Non-binary (handled with an androgynous steer) so it never adds a blank rule.
+// Mandatory, high-priority instruction locking the model's sex so Gemini does not
+// default to a male model when Female / Girl is selected. Empty for Non-binary.
 function sexClause(model){
   const g=(model&&model.gender)||'';
   if(/non-?binary/i.test(g)) return 'MODEL SEX (MANDATORY): the model is androgynous / non-binary in presentation — do NOT default to a conventionally male model.';
@@ -1316,6 +1457,7 @@ function buildPrompt(meta){
   const refLine = referenceClause(meta);
   const colorStr = [meta.colorName, meta.colorCode].filter(Boolean).join(' / ');
   const fabricStr = meta.fabricContent ? `${meta.fabric} — ${meta.fabricContent}` : meta.fabric;
+  const colorAccuracy = colorAccuracyLine(meta, colorStr);
   return `AI FASHION CATALOG ENGINE — produce a premium ${headerSubject(meta.model)} render.
 STYLE NAME / NUMBER: "${styleLine}"${colorStr?`\nCOLORWAY: ${colorStr}`:''}
 GARMENT CATEGORY: ${meta.category}
@@ -1324,7 +1466,7 @@ ART DIRECTION: ${meta.notes || 'Follow the reference and category conventions cl
 ${refLine}
 CRITICAL RULES (ABSOLUTE COMPLIANCE — NO EXCEPTIONS):
 ${rules.filter(Boolean).map((r,i)=>`${i+1}. ${r}`).join('\n')}
-TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: ${colorStr ? `the garment colorway is ${colorStr} — render this exact color faithfully and consistently across the whole garment.` : 'match the colorway named in the style.'} Luxury catalog realism throughout.`;
+TEXTURE FIDELITY: render the weave/surface of ${meta.fabric} faithfully. COLOR ACCURACY: ${colorAccuracy} Luxury catalog realism throughout.`;
 }
 // Optional: rewrite art direction into a tighter prompt via Claude
 async function buildClaudePrompt(localPrompt, meta){
@@ -1344,11 +1486,11 @@ async function buildClaudePrompt(localPrompt, meta){
 // =====================================================================
 // GEMINI CALL (REST, with 429 backoff)
 // =====================================================================
-async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false){
+async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false, refsOverride=null){
   const parts = [{ text: prompt }];
   // Attach the full-body reference first (when present), then the top, then the
   // bottom, so the prompt's "FIRST … / SECOND …" wording lines up with the order.
-  [S.refFull, S.refTop, S.refBottom].forEach(ref=>{
+  (refsOverride || [S.refFull, S.refTop, S.refBottom]).forEach(ref=>{
     if(!ref) return;
     const mime = ref.match(/^data:(image\/[^;]+)/)?.[1] || 'image/png';
     parts.push({ inline_data:{ data:ref.split(',')[1], mime_type:mime } });
@@ -1373,12 +1515,12 @@ async function callGemini(prompt, meta, attempt=0, extraImages=[], dropAR=false)
     body:JSON.stringify({ contents:{ parts }, generationConfig:genCfg })
   });
   if(resp.status===429){
-    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1,extraImages,dropAR); }
+    if(attempt<3){ document.getElementById('procStep').textContent=`Rate limited — retrying (${attempt+1}/3)…`; await new Promise(r=>setTimeout(r,delays[attempt])); return callGemini(prompt,meta,attempt+1,extraImages,dropAR,refsOverride); }
     throw new Error('429: RESOURCE_EXHAUSTED — quota limit reached.');
   }
   // Some API revisions reject the aspectRatio field; drop it and retry once.
   if(resp.status===400 && meta.aspectRatio && !dropAR){
-    return callGemini(prompt,meta,attempt,extraImages,true);
+    return callGemini(prompt,meta,attempt,extraImages,true,refsOverride);
   }
   if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e?.error?.message || `Gemini error ${resp.status}`); }
   const data = await resp.json();
@@ -1434,6 +1576,7 @@ async function generate(){
     styleName,
     colorName: document.getElementById('colorName').value.trim(),
     colorCode: document.getElementById('colorCode').value.trim(),
+    targetColor: S.targetColor || null,
     fabricContent: document.getElementById('fabricContent').value.trim(),
     category: S.category,
     fabric: document.getElementById('fabric').value,
@@ -2224,6 +2367,7 @@ function renderTray(){
           <button class="mini-btn" title="Share" onclick="event.stopPropagation();shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           <button class="mini-btn" title="Redo" onclick="event.stopPropagation();redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
           ${(r.meta.mode==='model'||r.meta.mode==='move')?`<button class="mini-btn" title="Lock this model" onclick="event.stopPropagation();lockModelById('${r.id}')"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>`:''}
+          ${r.kind!=='video'?`<button class="mini-btn" title="Recolour / colourways" onclick="event.stopPropagation();openRecolor('${r.id}')"><svg viewBox="0 0 24 24"><path d="M12 2.6S5.5 9.8 5.5 14a6.5 6.5 0 0 0 13 0c0-4.2-6.5-11.4-6.5-11.4z"/></svg></button>`:''}
           <button class="mini-btn" title="Lock this garment" onclick="event.stopPropagation();lockGarmentById('${r.id}')"><svg viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></button>
         </div>
       </div>
@@ -2239,6 +2383,7 @@ function loadIntoForm(r){
   document.getElementById('fabricContent').value=r.meta.fabricContent||'';
   document.getElementById('fabric').value=r.meta.fabric;
   document.getElementById('notes').value=r.meta.notes||'';
+  S.targetColor=r.meta.targetColor||null; refreshTargetColorUI();
   S.refTop=null; S.refBottom=null; S.refFull=null; clearRef('top'); clearRef('bottom'); clearRef('full');
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   setAngle(r.meta.angle||'front');
@@ -2332,6 +2477,7 @@ function renderCatalog(){
           <button class="cact gh full" onclick="shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
           <button class="cact gh" title="Open in Studio" onclick="openInStudio('${r.id}')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
           <button class="cact gh" title="Redo" onclick="redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+          ${r.kind!=='video'?`<button class="cact gh" title="Recolour / colourways" onclick="openRecolor('${r.id}')"><svg viewBox="0 0 24 24"><path d="M12 2.6S5.5 9.8 5.5 14a6.5 6.5 0 0 0 13 0c0-4.2-6.5-11.4-6.5-11.4z"/></svg></button>`:''}
           <button class="cact del" title="Delete" onclick="deleteRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
       </div>
@@ -2387,6 +2533,155 @@ function toast(msg, type){
   setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
 }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// =====================================================================
+// TARGET COLOUR + RECOLOUR / COLOURWAYS (V3.9)
+// =====================================================================
+function _normHex(v){
+  if(v==null) return null;
+  let h=String(v).trim(); if(!h) return null; if(h[0]!=='#') h='#'+h;
+  return /^#[0-9a-fA-F]{6}$/.test(h) ? h.toUpperCase() : null;
+}
+function onTargetHexInput(v){
+  const h=_normHex(v);
+  if(h) S.targetColor=h; else if(!String(v).trim()) S.targetColor=null;
+  refreshTargetColorUI();
+}
+function clearTargetColor(){ S.targetColor=null; const hx=document.getElementById('tcHex'); if(hx) hx.value=''; stopEyedropper(); refreshTargetColorUI(); }
+function refreshTargetColorUI(){
+  const sw=document.getElementById('tcSwatch'), hx=document.getElementById('tcHex'),
+        pk=document.getElementById('tcPicker'), out=document.getElementById('tcReadout');
+  if(!sw) return;
+  const h=S.targetColor;
+  if(h){
+    sw.style.background=h;
+    if(pk) pk.value=h.toLowerCase();
+    if(hx && document.activeElement!==hx) hx.value=h;
+    const ctx=buildColorContext(h);
+    if(out) out.innerHTML=`<span class="tc-dot" style="background:${h}"></span><b style="color:#fff">${esc(ctx.descriptor)}</b> · ${h} · Pantone ${esc(ctx.pantone)}`;
+  }else{
+    sw.style.background='var(--fill)';
+    if(out) out.textContent='No target colour set — using the colour name / code text above.';
+  }
+}
+// Eyedropper: sample a colour straight off the loaded reference image.
+function startEyedropper(){
+  if(!(S.refTop||S.refBottom||S.refFull)){ toast('Load a reference image first to sample a colour','err'); return; }
+  S._eyedrop=true; document.body.classList.add('sampling');
+  const b=document.getElementById('tcEyedrop'); if(b) b.classList.add('on');
+  toast('Click the reference image to sample its colour');
+}
+function stopEyedropper(){ S._eyedrop=false; document.body.classList.remove('sampling'); const b=document.getElementById('tcEyedrop'); if(b) b.classList.remove('on'); }
+function eyedropperClick(e){
+  if(!S._eyedrop) return;
+  const img=(e.target && e.target.tagName==='IMG' && e.target.closest('.ref-preview')) ? e.target : null;
+  if(!img) return;
+  e.preventDefault(); e.stopPropagation();
+  try{
+    const rect=img.getBoundingClientRect();
+    const bx=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    const by=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+    const nW=img.naturalWidth, nH=img.naturalHeight;
+    const boxAR=rect.width/rect.height, imgAR=nW/nH;
+    let u,v;
+    if(imgAR>boxAR){ const visW=boxAR/imgAR; u=(1-visW)/2+bx*visW; v=by; }
+    else           { const visH=imgAR/boxAR; v=(1-visH)/2+by*visH; u=bx; }
+    const px=Math.max(0,Math.min(nW-1,Math.round(u*nW)));
+    const py=Math.max(0,Math.min(nH-1,Math.round(v*nH)));
+    const c=document.createElement('canvas'); c.width=nW; c.height=nH;
+    const g=c.getContext('2d'); g.drawImage(img,0,0,nW,nH);
+    const d=g.getImageData(px,py,1,1).data;
+    const hex='#'+[d[0],d[1],d[2]].map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();
+    S.targetColor=hex; refreshTargetColorUI(); toast('Sampled '+hex);
+  }catch(err){ console.warn('eyedrop',err); toast('Could not sample that image','err'); }
+  stopEyedropper();
+}
+document.addEventListener('click', eyedropperClick, true);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && S._eyedrop) stopEyedropper(); });
+// ---- Recolour / Colourways ----
+function openRecolor(id){
+  const r=findRender(id); if(!r) return;
+  if(r.kind==='video' || r.meta.mode==='move'){ toast('Recolour works on still renders, not video clips','err'); return; }
+  S._recolorBase=r; S._recolorSwatches=[];
+  const img=document.getElementById('cwBase'); if(img) img.src=r.image;
+  document.getElementById('cwBaseName').textContent=r.styleName||'Render';
+  const modeLbl=r.meta.mode==='render'?'Ghost mannequin':'On model';
+  document.getElementById('cwBaseSub').textContent=`${r.meta.category||''} · ${modeLbl}`;
+  document.getElementById('cwProgress').textContent='';
+  const gb=document.getElementById('cwGenBtn'); if(gb) gb.disabled=false;
+  renderRecolorSwatches();
+  document.getElementById('recolorModal').classList.remove('hidden');
+}
+function hideRecolor(){ if(S._recoloring) return; document.getElementById('recolorModal').classList.add('hidden'); }
+function addRecolorSwatch(){
+  const pk=document.getElementById('cwPicker'), nm=document.getElementById('cwName');
+  const hex=_normHex(pk&&pk.value)||'#808080';
+  const name=((nm&&nm.value)||'').trim();
+  if((S._recolorSwatches||[]).length>=12){ toast('Up to 12 colourways at a time','err'); return; }
+  S._recolorSwatches.push({ hex, name });
+  if(nm) nm.value='';
+  renderRecolorSwatches();
+}
+function removeRecolorSwatch(i){ S._recolorSwatches.splice(i,1); renderRecolorSwatches(); }
+function renderRecolorSwatches(){
+  const wrap=document.getElementById('cwSwatches'); if(!wrap) return;
+  wrap.innerHTML=(S._recolorSwatches||[]).map((s,i)=>{
+    const ctx=buildColorContext(s.hex); const label=s.name||ctx.pantone;
+    return `<span class="cw-chip"><span class="dot" style="background:${s.hex}"></span><span>${esc(label)}</span><span class="mono">${s.hex}</span><button title="Remove" onclick="removeRecolorSwatch(${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>`;
+  }).join('');
+}
+function buildRecolorPrompt(base, swatch){
+  const ctx=buildColorContext(swatch.hex);
+  const cat=base.meta.category||'garment';
+  const sceneRule = base.meta.mode==='render'
+    ? 'Keep the pure flat #FFFFFF background and the ghost-mannequin presentation exactly as in the source image.'
+    : 'Keep the SAME model (identical face, hair, body and pose), the same background, framing and lighting exactly as in the source image.';
+  return `RECOLOUR TASK — a single source image is attached. Reproduce it EXACTLY, changing ONLY the colour of the ${cat}.
+KEEP IDENTICAL: garment type, construction, seams, stitching, collar, plackets, buttons, trims, pockets, pattern layout, drape, folds, proportions and framing. ${sceneRule}
+NEW GARMENT COLOUR: ${ctx.descriptor} — hex ${ctx.hex}, RGB (${ctx.rgb}), nearest Pantone ${ctx.pantone}${swatch.name?` ("${swatch.name}")`:''}.
+Apply this exact colour uniformly across the whole ${cat}, discarding the previous base colour and undertones entirely. High-key commercial lighting, soft fold shadows, flat-surface colour matches the swatch. Output a clean 3:4 portrait — no added tags, text, watermarks or logos.`;
+}
+async function generateColorways(){
+  if(!S._recolorBase) return;
+  if(!(S._recolorSwatches||[]).length){ toast('Add at least one target colour','err'); return; }
+  if(!S.apiKey){ showSettings(); toast('Add your Gemini API key first','err'); return; }
+  const base=S._recolorBase, swatches=S._recolorSwatches.slice();
+  const spec=base.meta.spec || { width:1200,height:1600,fit:'contain',bg:'transparent',format:'png',quality:0.92,dpi:300 };
+  const gb=document.getElementById('cwGenBtn'), prog=document.getElementById('cwProgress');
+  S._recoloring=true; if(gb) gb.disabled=true;
+  let made=0, last=null;
+  for(let i=0;i<swatches.length;i++){
+    const s=swatches[i], ctx=buildColorContext(s.hex);
+    if(prog) prog.textContent=`Rendering colourway ${i+1} of ${swatches.length}… (${s.name||ctx.pantone})`;
+    try{
+      const prompt=buildRecolorPrompt(base, s);
+      let image=await callGemini(prompt, base.meta, 0, [], false, [base.image]);
+      if(base.meta.mode==='render' || (base.meta.mode==='model' && base.transparent)){
+        try{ image=await removeBg(image, base.meta.mode); }catch(e){ console.warn('BG removal failed',e); }
+      }
+      const onModelScene=(base.meta.mode==='model' && !(spec.bg==='transparent' && spec.format!=='jpeg'));
+      image=await fitToSpec(image, spec, onModelScene ? (base.meta.backdrop&&base.meta.backdrop.color) : null);
+      const meta={ ...base.meta, colorName:(s.name||ctx.pantone), colorCode:'', targetColor:s.hex, notes:'' };
+      const transparent=((meta.mode==='render'||meta.mode==='model') && spec.format!=='jpeg' && spec.bg==='transparent');
+      const render={ id:crypto.randomUUID(), styleName:base.styleName, image, video:null, poster:null, kind:'image', ephemeral:false, meta, transparent, timestamp:Date.now(), filename:buildFilename(base.styleName, meta) };
+      S.session=[render,...S.session].slice(0,12);
+      await saveToCatalog(render); last=render; made++; renderTray();
+    }catch(err){
+      const msg=(err&&err.message)||''; console.error('recolour failed',err);
+      toast(`Colourway ${i+1} failed: ${msg.slice(0,80)}`,'err');
+      if(/429|quota|resource_exhausted/i.test(msg)) break;
+    }
+  }
+  S._recoloring=false; if(gb) gb.disabled=false; if(prog) prog.textContent='';
+  if(made){
+    if(last) showResult(last);
+    toast(`${made} colourway${made>1?'s':''} saved to the catalog`);
+    document.getElementById('recolorModal').classList.add('hidden');
+    renderTray();
+    const onCatalog=document.getElementById('catalogTab') && document.getElementById('catalogTab').classList.contains('active');
+    if(onCatalog) renderCatalog();
+  }
+}
+refreshTargetColorUI();
 init();
 </script>
 </body>
