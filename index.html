@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V4.1</title>
+<title>RD STYLE AI STUDIO — V4.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -306,7 +306,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.1</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.2</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -763,6 +763,15 @@ select.select option{background:#0d0d0d}
 // ignores any garment/person in the reference), a bgLocked branch in backdropClause so
 // the locked scene supersedes the swatch, and lockExtras attaches the scene ref
 // (skipped for Transparent cutouts, which have no background).
+// V4.2 — MODEL SEX / GENDER LOCK FIX: On-Model renders were ignoring the locked
+// model's sex (e.g. a locked FEMALE model rendering as male). Two causes fixed:
+// (1) the garment Source Reference was "AUTHORITATIVE — HIGHEST PRIORITY" with no
+// instruction to ignore the PERSON wearing it, so a menswear product photo's male
+// model leaked in and overrode the lock — referenceClause now scopes that authority
+// to the GARMENT ONLY and tells Gemini to ignore any person/body/face/skin in it.
+// (2) the model-identity lock clause asserted "identical person" but never restated
+// the chosen Sex — modelLockClause(model) now hard-locks the sex (female/male/
+// non-binary) and explicitly overrides any person shown in a garment reference.
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
@@ -1360,19 +1369,24 @@ function complementClause(meta){
 // Authoritative reference clause. Describes the attached reference image(s) in
 // the SAME order callGemini attaches them (full first, then top, then bottom) so
 // the "FIRST / SECOND" wording always lines up. Empty when no reference is loaded.
+// V4.2: every garment-reference branch is scoped to the GARMENT ONLY and tells
+// Gemini to IGNORE any person/body/face shown wearing it, so a product photo's
+// (often male) model can't leak in and override the selected / locked model sex.
 function referenceClause(meta){
   const scope = refScope(meta);
   if(!scope) return '';
+  // V4.2 — appended to every garment-reference branch below.
+  const IGNORE_PERSON = " GARMENT-ONLY AUTHORITY (CRITICAL): this reference image is authoritative for the GARMENT ALONE. Completely IGNORE any person, model, mannequin, body, face, hands, skin, hair, build or pose shown wearing or near the garment in this image — do NOT copy the wearer and do NOT infer the model from it. The model's SEX, identity, age, ethnicity and appearance are defined ONLY by the MODEL SEX instruction, the model details and the model-identity lock below — NEVER by this garment reference. If the person in this garment reference differs in sex from the selected model, the selected model always wins.";
   const fullFirst = `The FIRST attached reference image shows the EXACT one-piece full-body garment to depict — reproduce its garment TYPE (dress, jumpsuit, or full-length piece), neckline/collar, sleeve/strap, bodice, waist, skirt/leg shape, length, closure, construction, seams, pattern, drape and color precisely. Do NOT split it into separate top and bottom garments, add pieces it does not have, or convert it into a different garment type.`;
   const outfitFirst = `The FIRST attached reference image shows a complete HEAD-TO-TOE styled look — reproduce the full outfit faithfully, keeping each visible garment's TYPE, color, fabric, construction and proportions. Keep it a coordinated multi-piece look; do NOT merge the pieces into one garment or substitute them.`;
   const topFirst = `The FIRST attached reference image shows the EXACT TOP garment to depict — reproduce its garment TYPE, neckline/collar, sleeve length, closure (pullover vs buttoned placket), body length, hem, construction, seams, stripe/pattern, drape and color precisely. Do NOT turn it into a different garment type or add a collar, buttons, plackets, pockets or sleeves the reference does not have.`;
   const bottomFirst = `The FIRST attached reference image shows the EXACT BOTTOM garment to depict — reproduce its garment TYPE (trouser, jean, short, skirt, etc.), rise, waistband, leg/hem shape, length, construction, seams, pattern, drape and color precisely. Do NOT turn it into a different garment type or add a second layer of bottoms.`;
   const bottomSecond = bottomFirst.replace('The FIRST','The SECOND');
-  if(scope==='full') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${fullFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
-  if(scope==='outfit') return `REFERENCE LOOK (AUTHORITATIVE — HIGHEST PRIORITY): ${outfitFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.`;
-  if(scope==='top') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${topFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
-  if(scope==='bottom') return `REFERENCE GARMENT (AUTHORITATIVE — HIGHEST PRIORITY): ${bottomFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.`;
-  return `REFERENCE GARMENTS (AUTHORITATIVE — HIGHEST PRIORITY): TWO reference images are attached showing a coordinated top-and-bottom SET. ${topFirst} ${bottomSecond} Reproduce BOTH garments as the same physical pieces; do not merge them into one garment, swap their types, or substitute either piece. If a reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.`;
+  if(scope==='full') return `REFERENCE GARMENT (AUTHORITATIVE FOR GARMENT — HIGHEST PRIORITY): ${fullFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.${IGNORE_PERSON}`;
+  if(scope==='outfit') return `REFERENCE LOOK (AUTHORITATIVE FOR GARMENTS — HIGHEST PRIORITY): ${outfitFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.${IGNORE_PERSON}`;
+  if(scope==='top') return `REFERENCE GARMENT (AUTHORITATIVE FOR GARMENT — HIGHEST PRIORITY): ${topFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.${IGNORE_PERSON}`;
+  if(scope==='bottom') return `REFERENCE GARMENT (AUTHORITATIVE FOR GARMENT — HIGHEST PRIORITY): ${bottomFirst} If the reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE for garment type.${IGNORE_PERSON}`;
+  return `REFERENCE GARMENTS (AUTHORITATIVE FOR GARMENTS — HIGHEST PRIORITY): TWO reference images are attached showing a coordinated top-and-bottom SET. ${topFirst} ${bottomSecond} Reproduce BOTH garments as the same physical pieces; do not merge them into one garment, swap their types, or substitute either piece. If a reference and the GARMENT CATEGORY label disagree, FOLLOW THE REFERENCE.${IGNORE_PERSON}`;
 }
 // ---------- GHOST-MANNEQUIN SUBJECT (adapts to top / bottom / set / full / outfit) ----------
 function ghostMannequinStyle(scope, meta){
@@ -1766,6 +1780,23 @@ function showResult(render){
 // =====================================================================
 function veoAspect(spec){ return (spec && spec.width < spec.height) ? '9:16' : '16:9'; }
 const MODEL_LOCK_CLAUSE = `MODEL IDENTITY LOCK: One attached reference image is provided ONLY to fix the model's IDENTITY — reproduce this same individual precisely: identical face, bone structure, skin tone, hair colour and hairstyle, age and body type, so it reads as unmistakably the same person in every shot. Take NOTHING ELSE from this reference: IGNORE and DO NOT reuse its background, scene, location, lighting, pose, camera angle, crop or framing. The background, scene and lighting are set by the background / art-direction instructions above and MUST follow them, never this reference. Only the person's identity carries over — garment, pose, camera angle, background and scene are all set by the instructions above.`;
+// V4.2 — the model-identity lock, hardened with an explicit SEX lock so a locked
+// model's sex can't be overridden by the (often male) person in a garment product
+// photo. Appends a sex-specific line to MODEL_LOCK_CLAUSE based on the chosen Sex.
+function modelLockClause(model){
+  const g=(model&&model.gender)||'';
+  let sexLine='';
+  if(/non-?binary/i.test(g)){
+    sexLine=" The locked model is androgynous / non-binary — keep exactly that presentation across every shot.";
+  }else if(isFemaleGender(g)){
+    const noun = model&&model.ageGroup==='child'?'girl':model&&model.ageGroup==='teen'?'teenage girl':'woman';
+    sexLine=` The locked model is unmistakably FEMALE (a ${noun}) — preserve her female identity, face, build and styling in EVERY shot. NEVER render a male or boy, and NEVER adopt the sex of any person shown in a garment product photo / reference image.`;
+  }else if(isMaleGender(g)){
+    const noun = model&&model.ageGroup==='child'?'boy':model&&model.ageGroup==='teen'?'teenage boy':'man';
+    sexLine=` The locked model is unmistakably MALE (a ${noun}) — preserve his male identity, face, build and styling in EVERY shot. NEVER render a female or girl, and NEVER adopt the sex of any person shown in a garment product photo / reference image.`;
+  }
+  return MODEL_LOCK_CLAUSE + sexLine;
+}
 function modelLockRefs(){ return S.lockedModel ? [S.lockedModel.image] : []; }
 function garmentLockRefs(){ return S.lockedGarment ? [S.lockedGarment.image] : []; }
 const BACKGROUND_LOCK_CLAUSE = `BACKGROUND / SCENE LOCK: One attached reference image is provided ONLY to fix the BACKGROUND and environment — reproduce its setting, location, backdrop, surfaces, props, depth, perspective, time of day, colour palette and lighting faithfully, so every shot shares the same place. Take NOTHING ELSE from this reference: IGNORE any garment, person, model or mannequin shown in it — the hero garment and the model are defined above and must be placed INTO this environment. This background must read as unmistakably the same location across every shot.`;
@@ -1776,7 +1807,7 @@ const GARMENT_LOCK_CLAUSE = `GARMENT LOCK: One attached reference image shows th
 function lockExtras(meta){
   const imgs=[]; let clause='';
   if(S.lockedGarment){ imgs.push(S.lockedGarment.image); clause += '\n\n'+GARMENT_LOCK_CLAUSE; }
-  if(S.lockedModel && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.lockedModel.image); clause += '\n\n'+MODEL_LOCK_CLAUSE; }
+  if(S.lockedModel && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.lockedModel.image); clause += '\n\n'+modelLockClause(meta.model); }
   if(S.lockedBackground && (meta.mode==='model'||meta.mode==='move') && !isCutoutMeta(meta)){ imgs.push(S.lockedBackground.image); clause += '\n\n'+BACKGROUND_LOCK_CLAUSE; }
   return { imgs, clause };
 }
