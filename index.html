@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V4.2</title>
+<title>RD STYLE AI STUDIO — V4.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -166,6 +166,24 @@ select.select option{background:#0d0d0d}
 .mini-pill{background:rgba(255,255,255,0.1);border:1px solid var(--line);color:#fff;font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:7px 12px;border-radius:999px;cursor:pointer;flex-shrink:0;transition:background .15s}
 .mini-pill:hover:not(:disabled){background:rgba(255,255,255,0.2)}
 .mini-pill:disabled{opacity:0.4;cursor:not-allowed}
+/* LOCK BAR (V4.3) — always-visible status of the three locks */
+.lock-bar{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--fill)}
+.lock-bar.on{border-color:#7CFF9B;background:rgba(124,255,155,0.06)}
+.lock-bar .lb-none{font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#666}
+.lb-head{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:0.14em;color:#7CFF9B;margin-bottom:10px}
+.lb-dot{width:7px;height:7px;border-radius:50%;background:#7CFF9B;box-shadow:0 0 8px #7CFF9B}
+.lb-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.lb-chip{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 7px 5px 11px;font-size:11px;color:#ccc}
+.lb-chip b{font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
+.lb-chip button{display:flex;padding:2px;color:var(--muted)}
+.lb-chip button:hover{color:var(--danger)}
+.lb-chip button svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+.lb-clear{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#fff;text-decoration:underline}
+.lb-clear:hover{color:#ddd}
+/* ART DIRECTOR — quick cue chips (V4.4) */
+.ad-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.ad-chip{font-family:var(--font-mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);background:var(--fill);border:1px solid var(--line);border-radius:999px;padding:6px 11px;transition:all .15s}
+.ad-chip:hover{color:#fff;border-color:rgba(255,255,255,0.3)}
 /* 3-up mode picker */
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .grid3 .choice{padding:13px 10px;font-size:11px}
@@ -306,7 +324,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.2</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.4</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -330,6 +348,7 @@ select.select option{background:#0d0d0d}
   <div class="studio-wrap" id="studioTab">
     <!-- SIDEBAR -->
     <aside class="sidebar">
+      <div id="lockBar" class="lock-bar"></div>
       <section>
         <label class="field-label">Style Name or Number <span class="req">REQUIRED</span></label>
         <input type="text" id="styleName" class="text-input" placeholder="e.g. 78MS301S" oninput="clearMark('styleName')"/>
@@ -453,6 +472,22 @@ select.select option{background:#0d0d0d}
           <div class="pill-row" id="angleGroup"></div>
           <div class="note-box" id="angleNote" style="margin-top:10px">Choose the shot angle for this render. Generate one angle at a time — lock the model first to keep the same person across Front, Back and other angles.</div>
         </div>
+        <div style="margin-top:16px">
+          <label class="sub-label">Model Pose <span style="opacity:0.5">(base pose — Art Direction can override)</span></label>
+          <select class="select" id="poseSel" onchange="setPose(this.value)"></select>
+          <div class="note-box" id="poseNote" style="margin-top:10px">A dynamic fashion-pose bank to fall back on as a base. The model strikes this pose unless your <b>Art Direction</b> describes a different one. Pick <b>Relaxed natural stance</b> for clean catalog shots, or a dynamic pose for editorial energy.</div>
+        </div>
+        <div style="margin-top:16px">
+          <label class="sub-label">Footwear Reference <span style="opacity:0.5">(optional — controls the shoes)</span></label>
+          <div id="refSlotShoe" class="ref-slot">
+            <button class="upload-zone compact" onclick="document.getElementById('refFileShoe').click()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Add Footwear</span>
+            </button>
+            <input type="file" id="refFileShoe" accept="image/*" class="hidden" onchange="handleRef(event,'shoe')"/>
+          </div>
+          <div class="note-box" id="shoeNote" style="margin-top:10px">Upload a shoe / footwear reference (a catalogue shot or flat) and the model wears <b>those exact shoes</b>. Applies to On-Model &amp; Move only.</div>
+        </div>
         <div id="backdropBlock" style="margin-top:16px">
           <label class="sub-label">Photoshoot Backdrop Color</label>
           <div class="swatch-row" id="bgColorSwatches"></div>
@@ -522,8 +557,10 @@ select.select option{background:#0d0d0d}
         </div>
       </section>
       <section>
-        <label class="field-label">Additional Art Direction</label>
-        <textarea id="notes" class="textarea" placeholder="e.g. Include subtle horn buttons, show interior lining texture, contrast topstitching…"></textarea>
+        <label class="field-label">Art Direction</label>
+        <textarea id="notes" class="textarea" placeholder="Direct the shot like an art director — scene, location, lighting, mood, model pose &amp; gesture, styling, props. e.g. &quot;Model mid-stride on a sunlit Milan street at golden hour, looking off-camera, hand adjusting the lapel.&quot;"></textarea>
+        <div class="ad-chips" id="adChips"></div>
+        <div class="note-box">Tap a cue to drop it in, then refine the wording. This field is the master directive — it overrides the Pose, backdrop and camera defaults when they conflict.</div>
       </section>
       <section id="outputSizeSection">
         <label class="field-label">Output Size</label>
@@ -772,10 +809,68 @@ select.select option{background:#0d0d0d}
 // (2) the model-identity lock clause asserted "identical person" but never restated
 // the chosen Sex — modelLockClause(model) now hard-locks the sex (female/male/
 // non-binary) and explicitly overrides any person shown in a garment reference.
+// =====================================================================
+// V4.3 — LOCK HARDENING (consistency fix). Addresses locks "slipping" and an
+// OLD locked model reappearing. Five changes:
+// (1) STALE-LOCK VISIBILITY: a persistent Lock Bar at the top of the sidebar shows
+//     every active lock in ALL modes with per-lock unlock + a Clear-all-locks button,
+//     so a lock set in an earlier session can't silently keep firing.
+// (2) NO MORE TYPED-vs-LOCKED CONFLICT: locking a model now captures that render's
+//     full model spec (sex/age/ethnicity/skin/hair). While a model is locked, the
+//     prompt describes the LOCKED person (not whatever is currently typed), so the
+//     two can't disagree and flip the output.
+// (3) POSITIONAL IMAGE MANIFEST: every attached image is enumerated (IMAGE 1..N) in
+//     the exact order callGemini attaches them, each tagged with its single role, so
+//     Gemini can't confuse the garment photo for the model / background.
+// (4) ONE PRIORITY LADDER: a single explicit conflict-resolution order replaces the
+//     scattered "HIGHEST PRIORITY" claims (model identity > garment > background > notes).
+// (5) HIGHER-FIDELITY LOCK PLATES: lock reference images are stored at 1024px / q0.95
+//     (was 768 / q0.90) for a stronger identity signal.
+// =====================================================================
+// V4.4 — ART DIRECTOR + POSE BANK + FOOTWEAR REFERENCE.
+// (1) POSE BANK: a Model Pose select (dynamic fashion poses) gives On-Model /
+//     Move renders a consistent BASE pose to fall back on; poseClause() injects
+//     it, and the Art Direction field overrides it when it describes a pose.
+// (2) ART-DIRECTOR PROMPT BOX: the notes field is reframed as the master
+//     directive with quick-insert cue chips (scene / light / mood / gesture).
+// (3) FOOTWEAR REFERENCE: a new per-shoot upload (S.refShoe) attaches the exact
+//     shoes to On-Model / Move renders via FOOTWEAR_REF_CLAUSE so the model
+//     wears those shoes; it is enumerated in the image manifest like the garment.
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
 const ANGLES = [['front','Front'],['three-quarter','3/4'],['side','Side'],['back','Back']];
+// V4.4 — dynamic fashion-pose bank. [id, label, prompt clause]. 'natural' is the
+// base fallback. The Art Direction field overrides the pose when it describes one.
+const POSES = [
+  ['natural','Relaxed natural stance','standing in a relaxed, natural pose with easy confident posture and weight settled naturally'],
+  ['walk','Walking stride','a dynamic walking stride toward the camera, one foot forward mid-step with a natural arm swing'],
+  ['motion','Caught in motion','caught mid-motion with real movement energy — fabric and hair reacting, an editorial candid feel'],
+  ['hip','Hand on hip','one hand resting on the hip with weight shifted onto one leg, an assertive editorial stance'],
+  ['contrapposto','Contrapposto','a classic editorial contrapposto — weight on one leg, hips and shoulders gently counter-rotated for an elegant line'],
+  ['pockets','Hands in pockets','a casual stance with hands in the pockets, shoulders relaxed, an understated confident mood'],
+  ['glance','Over-the-shoulder glance','turned slightly away with an over-the-shoulder glance back toward the camera'],
+  ['turn','Three-quarter turn','a graceful three-quarter turn that shows the side of the garment while the face angles toward camera'],
+  ['lean','Leaning','leaning casually against a wall or surface with a laid-back editorial posture'],
+  ['seated','Seated','seated in a relaxed, elegant pose that keeps the garment lines clean and readable'],
+  ['cross','Arms crossed','standing with arms crossed, a strong confident posture with the chin slightly up'],
+  ['adjust','Adjusting the garment','a natural gesture adjusting the collar, cuff or sleeve that draws attention to the construction'],
+  ['twist','Dynamic twist','a dynamic torso twist with the fabric in motion, an expressive high-fashion runway feel'],
+  ['power','Power stance','a strong power stance with feet set apart, squared to camera, commanding and editorial'],
+];
+// V4.4 — quick art-direction cue chips appended to the notes field. [label, text].
+const ART_CUES = [
+  ['Golden hour','warm golden-hour sunlight'],
+  ['Studio seamless','clean seamless studio backdrop'],
+  ['Urban street','on a quiet urban street'],
+  ['Editorial','high-fashion editorial mood'],
+  ['Soft daylight','soft diffused daylight'],
+  ['Moody low-key','moody low-key lighting'],
+  ['Full length','full-length head-to-toe framing'],
+  ['Detail crop','tighter crop highlighting fabric detail'],
+  ['Looking off-camera','gaze directed off-camera'],
+  ['Motion blur','subtle motion blur for energy'],
+];
 // Model age groups for On-Model / Move. Child & Teen swap the Sex + Age
 // options and steer the prompt toward wholesome, age-appropriate catalog imagery.
 const AGE_GROUPS = [['adult','Adult'],['teen','Teen'],['child','Child']];
@@ -823,17 +918,18 @@ const REF_SLOTS = {
   top:    { slot:'refSlotTop',    input:'refFileTop',    label:'Top' },
   bottom: { slot:'refSlotBottom', input:'refFileBottom', label:'Bottom' },
   full:   { slot:'refSlotFull',   input:'refFileFull',   label:'Full-Body' },
+  shoe:   { slot:'refSlotShoe',   input:'refFileShoe',   label:'Footwear' },
 };
-function refVal(which){ return which==='bottom' ? S.refBottom : which==='full' ? S.refFull : S.refTop; }
-function setRefVal(which,v){ if(which==='bottom') S.refBottom=v; else if(which==='full') S.refFull=v; else S.refTop=v; }
+function refVal(which){ return which==='bottom' ? S.refBottom : which==='full' ? S.refFull : which==='shoe' ? S.refShoe : S.refTop; }
+function setRefVal(which,v){ if(which==='bottom') S.refBottom=v; else if(which==='full') S.refFull=v; else if(which==='shoe') S.refShoe=v; else S.refTop=v; }
 const S = {
   apiKey:'', anthropicKey:'', showTimer:true,
-  mode:'render', category:'', fit:'', angle:'front', ageGroup:'',
+  mode:'render', category:'', fit:'', angle:'front', ageGroup:'', pose:'natural',
   bgColor:'#FFFFFF', bgColorLabel:'White', naturalLight:false, gradient:false,
   targetColor:null,          // target garment colour hex (per-garment, not persisted)
   moveEngine:'veo',
-  refTop:null, refBottom:null, refFull:null,   // top / bottom / full-body garment references (any combination)
-  lockedModel:null,        // { image, label } — reused as identity reference
+  refTop:null, refBottom:null, refFull:null, refShoe:null,   // garment references (any combination) + footwear reference (on-model/move)
+  lockedModel:null,        // { image, label, model } — reused as identity reference
   lockedGarment:null,      // { image, label } — reused as garment reference
   lockedBackground:null,   // { image, label } — reused as scene/background reference (on-model/move)
   spec:{ width:1200, height:1600, fit:'contain', bg:'transparent', format:'png', quality:0.92, dpi:300 },
@@ -849,7 +945,7 @@ function init(){
   S.anthropicKey = localStorage.getItem('rd_anthropic_key') || '';
   S.showTimer = localStorage.getItem('rd_show_timer') !== 'false';
   const lm = localStorage.getItem('rd_locked_model');
-  if(lm) S.lockedModel = { image:lm, label: localStorage.getItem('rd_locked_model_label')||'Model' };
+  if(lm){ let mm=null; try{ mm=JSON.parse(localStorage.getItem('rd_locked_model_meta')||'null'); }catch(e){ mm=null; } S.lockedModel = { image:lm, label: localStorage.getItem('rd_locked_model_label')||'Model', model:mm }; }
   const lg = localStorage.getItem('rd_locked_garment');
   if(lg) S.lockedGarment = { image:lg, label: localStorage.getItem('rd_locked_garment_label')||'Garment' };
   const lb = localStorage.getItem('rd_locked_background');
@@ -861,6 +957,8 @@ function init(){
   buildAgeGroupButtons();
   buildGenderOptions();
   buildAgeOptions();
+  buildPoseOptions();
+  buildArtCues();
   buildBackdropSwatches();
   buildFilterCategories();
   buildPresetOptions();
@@ -874,6 +972,7 @@ function init(){
   renderModelLock();
   renderGarmentLock();
   renderBackgroundLock();
+  renderLockBar();
   updateKeyDot();
   S._initing=false;
   openDB().then(loadCatalog);
@@ -887,7 +986,7 @@ function saveConfig(){
   if(S._initing) return;
   try{
     const cfg = {
-      spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, ageGroup:S.ageGroup, moveEngine:S.moveEngine,
+      spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, ageGroup:S.ageGroup, pose:S.pose, moveEngine:S.moveEngine,
       bgColor:S.bgColor, bgColorLabel:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient,
       fabric:(document.getElementById('fabric')||{}).value,
       model:{
@@ -910,6 +1009,7 @@ function loadConfig(){
   if(cfg.category) S.category=cfg.category;
   if(cfg.fit) S.fit=cfg.fit;
   if(cfg.angle) S.angle=cfg.angle;
+  if(cfg.pose) S.pose=cfg.pose;
   if(cfg.ageGroup && AGE_OPTIONS[cfg.ageGroup]) S.ageGroup=cfg.ageGroup;
   if(cfg.bgColor) S.bgColor=cfg.bgColor;
   if(cfg.bgColorLabel) S.bgColorLabel=cfg.bgColorLabel;
@@ -1053,6 +1153,24 @@ function setMoveEngine(e){
 function setCategory(c){ S.category=c; buildCategoryButtons(); clearMark('catGroup'); updateRefModeNote(); saveConfig(); }
 function setFit(f){ S.fit=f; buildFitButtons(); clearMark('fitGroup'); saveConfig(); }
 function setAngle(a){ S.angle=a; buildAngleButtons(); saveConfig(); }
+// V4.4 — Model Pose bank
+function buildPoseOptions(){
+  const sel=document.getElementById('poseSel'); if(!sel) return;
+  sel.innerHTML=POSES.map(([id,label])=>`<option value="${id}"${id===S.pose?' selected':''}>${label}</option>`).join('');
+}
+function setPose(p){ S.pose=p; saveConfig(); }
+function poseClauseText(id){ const p=POSES.find(x=>x[0]===id)||POSES[0]; return p[2]; }
+// V4.4 — quick art-direction cue chips
+function buildArtCues(){
+  const el=document.getElementById('adChips'); if(!el) return;
+  el.innerHTML=ART_CUES.map(([label,text])=>`<button type="button" class="ad-chip" onclick="addArtDirection('${text}')">+ ${esc(label)}</button>`).join('');
+}
+function addArtDirection(text){
+  const ta=document.getElementById('notes'); if(!ta) return;
+  const cur=ta.value.trim();
+  ta.value = cur ? (cur.replace(/[.,;\s]+$/,'')+', '+text) : (text.charAt(0).toUpperCase()+text.slice(1));
+  ta.focus();
+}
 // ---------- OUTPUT SPEC (size / fit / format) ----------
 function clampInt(v,min,max,dflt){ const n=parseInt(v,10); if(isNaN(n))return dflt; return Math.max(min,Math.min(max,n)); }
 function buildPresetOptions(){
@@ -1106,9 +1224,9 @@ function handleRef(e, which){ processRefFile(e.target.files?.[0], which); }
 function processRefFile(file, which){
   if(!file) return;
   if(!/^image\//.test(file.type||'')){ toast('Please use an image file','err'); return; }
-  autofillFromFilename(file.name);
+  if(which!=='shoe') autofillFromFilename(file.name);
   const reader = new FileReader();
-  reader.onloadend = ()=>{ setRefVal(which, reader.result); showRefPreview(which); updateRefModeNote(); clearMark('refGrid'); };
+  reader.onloadend = ()=>{ setRefVal(which, reader.result); showRefPreview(which); updateRefModeNote(); if(which!=='shoe') clearMark('refGrid'); };
   reader.onerror = ()=>toast('Could not read that image','err');
   reader.readAsDataURL(file);
 }
@@ -1134,7 +1252,7 @@ function updateRefModeNote(){
 // existing preview). Handlers live on the persistent .ref-slot wrappers, not
 // the button that gets swapped out by showRefPreview()/clearRef().
 function initRefDnD(){
-  ['top','bottom','full'].forEach(which=>{
+  ['top','bottom','full','shoe'].forEach(which=>{
     const cfg=REF_SLOTS[which];
     const slot=document.getElementById(cfg.slot); if(!slot) return;
     ['dragenter','dragover'].forEach(ev=>slot.addEventListener(ev,e=>{
@@ -1293,6 +1411,12 @@ function angleClause(angle){
     default:
       return "CAMERA ANGLE — FRONT VIEW: photograph the model straight-on and front-facing, centered and square to the camera, garment shown clearly from the front.";
   }
+}
+// V4.4 — base model pose from the Pose bank. The Art Direction field overrides it.
+function poseClause(meta){
+  const txt = poseClauseText(meta.pose || 'natural');
+  const override = meta.notes ? ' If the ART DIRECTION above describes a different pose, gesture or action, FOLLOW THE ART DIRECTION instead of this base pose.' : '';
+  return `MODEL POSE (base): the model is ${txt}.${override}`;
 }
 // On-Model photoshoot backdrop: color + optional natural light + gradient.
 function backdropClause(meta){
@@ -1486,6 +1610,7 @@ function buildPrompt(meta){
     bgRule,
     styleRule,
     angleClause(meta.angle),
+    poseClause(meta),
     "FRAMING: 3:4 portrait crop, garment is the clear focal point, well-lit, no harsh shadows obscuring fabric detail.",
     "NO TAGS OR ARTIFACTS: remove price tags, barcode tags, sizing tags and brand labels from the garment.",
     "PHOTOREALISM: high-end catalog quality, true-to-life proportions, no extra limbs or distortions.",
@@ -1619,11 +1744,13 @@ async function generate(){
     fit: S.fit,
     mode: S.mode,
     angle: S.angle,
+    pose: S.pose,
     backdrop: { color:S.bgColor, label:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient },
     notes: document.getElementById('notes').value.trim(),
     hasTopRef: !!S.refTop,
     hasBottomRef: !!S.refBottom,
     hasFullRef: !!S.refFull,
+    hasShoeRef: !!(S.refShoe && (S.mode==='model'||S.mode==='move')),
     hasRef: !!(S.refTop||S.refBottom||S.refFull),
     bgLocked: !!(S.lockedBackground && (S.mode==='model'||S.mode==='move')),
     motion: document.getElementById('moveMotion').value,
@@ -1640,6 +1767,17 @@ async function generate(){
       ageGroup: S.ageGroup,
     }
   };
+  // V4.3 — MODEL-LOCK AUTHORITY: when a model is locked on an On-Model / Move run,
+  // the locked render's captured model spec (sex/age/ethnicity/skin/hair) describes
+  // the person, NOT whatever is currently typed in Model Configuration. This stops
+  // the typed fields and the locked identity from disagreeing and flipping the output.
+  if((meta.mode==='model'||meta.mode==='move') && S.lockedModel){
+    meta.modelLocked = true;
+    if(S.lockedModel.model && typeof S.lockedModel.model==='object'){
+      meta.model = { ...meta.model, ...S.lockedModel.model };
+      if(!AGE_OPTIONS[meta.model.ageGroup]) meta.model.ageGroup = S.ageGroup;
+    }
+  }
   const veoMove = (meta.mode==='move' && meta.engine==='veo');
   setProcessing(true);
   document.getElementById('procTitle').textContent = veoMove ? 'Generating Video Clip' : (meta.mode==='move' ? 'Building Motion Loop' : 'Generating High-Res Asset');
@@ -1667,6 +1805,11 @@ async function generate(){
       }
       const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
       if(lockClause) prompt += lockClause;
+      // V4.3 — prepend the positional image manifest + priority ladder AFTER any
+      // Claude rewrite so it is never summarised away. This tells Gemini exactly
+      // which attached image is the garment vs the locked model vs the background.
+      const manifest = buildImageManifest(meta);
+      if(manifest) prompt = manifest + '\n' + PRIORITY_LADDER + '\n\n' + prompt;
       image = await callGemini(prompt, meta, 0, lockImgs);
       // RENDER always, and ON-MODEL when Transparent is selected -> cut to alpha
       if(meta.mode==='render' || (meta.mode==='model' && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg')){
@@ -1754,6 +1897,7 @@ function showResult(render){
                : (rt&&rb) ? '<span class="tag dim">SET · TOP+BOTTOM</span>'
                : rb ? '<span class="tag dim">BOTTOM REF</span>'
                : rt ? '<span class="tag dim">TOP REF</span>' : '';
+  const shoeTag = render.meta.hasShoeRef ? '<span class="tag dim">FOOTWEAR REF</span>' : '';
   const sizeTag = isVideo
     ? `<span class="tag dim">1080p ${veoAspect(render.meta.spec)} MP4</span>`
     : mode==='move'
@@ -1765,6 +1909,7 @@ function showResult(render){
       <span class="tag dim">${esc(render.meta.category)}</span>
       <span class="tag dim">${esc(render.meta.fabric)}</span>
       ${refTag}
+      ${shoeTag}
       ${angleTag}
       ${sizeTag}
       ${modeTag}
@@ -1803,22 +1948,70 @@ const BACKGROUND_LOCK_CLAUSE = `BACKGROUND / SCENE LOCK: One attached reference 
 function backgroundLockRefs(){ return S.lockedBackground ? [S.lockedBackground.image] : []; }
 function isCutoutMeta(meta){ return !!(meta && meta.mode!=='render' && meta.spec && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg'); }
 const GARMENT_LOCK_CLAUSE = `GARMENT LOCK: One attached reference image shows the EXACT garment to depict. Replicate this same physical product precisely — identical color/colorway, fabric, knit/weave, pattern, panel construction, seams, trims, buttons and proportions — even when shown from a different camera angle. Ignore any person, mannequin or background in that reference; copy only the garment. This must be the same item across every shot.`;
+// V4.4 — footwear reference. The model wears the EXACT shoes shown; copy only the footwear.
+const FOOTWEAR_REF_CLAUSE = `FOOTWEAR REFERENCE: One attached reference image shows the EXACT shoes / footwear the model must wear. Put these specific shoes on the model's feet — reproduce their type, silhouette, colour, material, sole and detailing faithfully. IGNORE any person, garment, mannequin or background in that image; copy ONLY the footwear, and do NOT substitute different shoes.`;
+// V4.3 — positional image manifest + single priority ladder. Enumerates every
+// attached reference in the EXACT order callGemini attaches them (source refs:
+// full, top, bottom; then locked garment, locked model, locked background) and
+// tags each with its one role, so Gemini never mistakes the garment photo for the
+// model or the scene. The ladder replaces the scattered "HIGHEST PRIORITY" claims.
+const PRIORITY_LADDER = `INSTRUCTION PRIORITY — when any instructions or attached images conflict, the HIGHER rule always wins:
+1. MODEL SEX & IDENTITY: the person (sex, face, build, hair, skin) is set ONLY by the MODEL SEX instruction and the LOCKED MODEL IDENTITY image when present — NEVER by whoever is pictured wearing a garment.
+2. GARMENT IDENTITY: garment type, colour, fabric and construction come from the SOURCE GARMENT / LOCKED GARMENT images; the shoes come from the FOOTWEAR REFERENCE image when one is attached.
+3. BACKGROUND / SCENE: from the LOCKED BACKGROUND image, or otherwise the backdrop spec.
+4. Camera angle, framing and art-direction notes.`;
+function buildImageManifest(meta){
+  const lines=[]; let n=0;
+  const add=(role)=>{ n++; lines.push(`IMAGE ${n}: ${role}`); };
+  const usesModel = (meta.mode==='model'||meta.mode==='move');
+  if(S.refFull)   add('SOURCE GARMENT REFERENCE (full-body / one-piece) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
+  if(S.refTop)    add('SOURCE GARMENT REFERENCE (top) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
+  if(S.refBottom) add('SOURCE GARMENT REFERENCE (bottom) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
+  if(S.lockedGarment) add('LOCKED GARMENT — the exact physical garment to reproduce across shots; copy ONLY the garment, ignore any person or background in it.');
+  if(S.lockedModel && usesModel) add('LOCKED MODEL IDENTITY — the exact person to reproduce (face, build, hair, skin, sex); copy ONLY the identity, and IGNORE its garment, pose, background and lighting.');
+  if(S.lockedBackground && usesModel && !isCutoutMeta(meta)) add('LOCKED BACKGROUND — the exact scene / environment to reproduce; copy ONLY the setting, ignore any person or garment shown in it.');
+  if(S.refShoe && usesModel) add('FOOTWEAR REFERENCE — the exact shoes the model must wear; copy ONLY the footwear, ignore any person, garment or background shown in it.');
+  if(!lines.length) return '';
+  return `ATTACHED REFERENCE IMAGES — there ${n===1?'is 1 image':'are '+n+' images'}, in THIS exact order. Use each image ONLY for its stated role and never treat one as another:\n${lines.join('\n')}`;
+}
 // Combined extra reference images + prompt clause for the locked garment/model.
 function lockExtras(meta){
   const imgs=[]; let clause='';
   if(S.lockedGarment){ imgs.push(S.lockedGarment.image); clause += '\n\n'+GARMENT_LOCK_CLAUSE; }
   if(S.lockedModel && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.lockedModel.image); clause += '\n\n'+modelLockClause(meta.model); }
   if(S.lockedBackground && (meta.mode==='model'||meta.mode==='move') && !isCutoutMeta(meta)){ imgs.push(S.lockedBackground.image); clause += '\n\n'+BACKGROUND_LOCK_CLAUSE; }
+  if(S.refShoe && (meta.mode==='model'||meta.mode==='move')){ imgs.push(S.refShoe); clause += '\n\n'+FOOTWEAR_REF_CLAUSE; }
   return { imgs, clause };
+}
+// V4.3 — always-visible lock status bar (all modes). Shows every active lock with
+// a per-lock unlock button and a Clear-all-locks action, so a lock set in an
+// earlier session can't silently keep steering new renders.
+function renderLockBar(){
+  const el=document.getElementById('lockBar'); if(!el) return;
+  const locks=[];
+  if(S.lockedModel) locks.push(['Model', S.lockedModel.label, 'unlockModel']);
+  if(S.lockedGarment) locks.push(['Garment', S.lockedGarment.label, 'unlockGarment']);
+  if(S.lockedBackground) locks.push(['Background', S.lockedBackground.label, 'unlockBackground']);
+  if(!locks.length){ el.className='lock-bar'; el.innerHTML='<span class="lb-none">No locks active — renders use the fields below.</span>'; return; }
+  el.className='lock-bar on';
+  el.innerHTML=`<div class="lb-head"><span class="lb-dot"></span>${locks.length} LOCK${locks.length>1?'S':''} ACTIVE — REUSED ON EVERY RENDER</div>
+    <div class="lb-chips">${locks.map(([k,label,fn])=>`<span class="lb-chip"><b>${k}</b> ${esc(label||'')}<button title="Unlock ${k}" onclick="${fn}()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>`).join('')}</div>
+    <button class="lb-clear" onclick="clearAllLocks()">Clear all locks</button>`;
+}
+function clearAllLocks(){
+  S.lockedModel=null; S.lockedGarment=null; S.lockedBackground=null;
+  ['rd_locked_model','rd_locked_model_label','rd_locked_model_meta','rd_locked_garment','rd_locked_garment_label','rd_locked_background','rd_locked_background_label'].forEach(k=>localStorage.removeItem(k));
+  renderModelLock(); renderGarmentLock(); renderBackgroundLock(); renderTray();
+  toast('All locks cleared');
 }
 function renderModelLock(){
   const el=document.getElementById('modelLockPanel');
-  if(!el) return;
+  if(el){
   if(S.lockedModel){
     el.innerHTML=`<label class="sub-label">Locked Model</label>
       <div class="lock-row">
         <img src="${S.lockedModel.image}" class="lock-thumb" alt="Locked model"/>
-        <div class="lock-info"><div class="lock-on">● Model locked</div><div class="lock-sub">New On-Model &amp; Move renders reuse this exact person.</div></div>
+        <div class="lock-info"><div class="lock-on">● Model locked</div><div class="lock-sub">New On-Model &amp; Move renders reuse this exact person. Typed Model Configuration fields are ignored until you unlock.</div></div>
         <button class="mini-pill" onclick="unlockModel()">Unlock</button>
       </div>`;
   }else{
@@ -1829,6 +2022,8 @@ function renderModelLock(){
         <button class="mini-pill" ${can?'':'disabled'} onclick="lockCurrentModel()">${can?'Lock current render':'Select a model render first'}</button>
       </div>`;
   }
+  }
+  renderLockBar();
 }
 async function lockCurrentModel(){ if(S.current) await lockModelFrom(S.current); }
 async function lockModelById(id){ const r=findRender(id); if(r) await lockModelFrom(r); }
@@ -1836,8 +2031,10 @@ async function lockModelFrom(r){
   if(!(r.meta.mode==='model'||r.meta.mode==='move')){ toast('Lock works on On-Model or Move renders only','err'); return; }
   const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
   try{
-    const small = await downscaleDataURL(src, 768);
-    S.lockedModel = { image:small, label:r.styleName||'Model' };
+    const small = await downscaleDataURL(src, 1024, 0.95);   // V4.3 — higher-fidelity identity plate
+    // V4.3 — capture this render's full model spec so future renders describe the
+    // locked person, not whatever is currently typed in Model Configuration.
+    S.lockedModel = { image:small, label:r.styleName||'Model', model:(r.meta && r.meta.model) ? { ...r.meta.model } : null };
     persistLock();
     renderModelLock(); renderTray();
     toast('Model locked — new renders will reuse this person');
@@ -1845,26 +2042,30 @@ async function lockModelFrom(r){
 }
 function unlockModel(){
   S.lockedModel=null;
-  localStorage.removeItem('rd_locked_model'); localStorage.removeItem('rd_locked_model_label');
+  localStorage.removeItem('rd_locked_model'); localStorage.removeItem('rd_locked_model_label'); localStorage.removeItem('rd_locked_model_meta');
   renderModelLock(); renderTray();
   toast('Model unlocked');
 }
 function persistLock(){
-  try{ localStorage.setItem('rd_locked_model', S.lockedModel.image); localStorage.setItem('rd_locked_model_label', S.lockedModel.label||''); }
+  try{
+    localStorage.setItem('rd_locked_model', S.lockedModel.image);
+    localStorage.setItem('rd_locked_model_label', S.lockedModel.label||'');
+    localStorage.setItem('rd_locked_model_meta', JSON.stringify(S.lockedModel.model||null));
+  }
   catch(e){ toast('Model locked for this session (too large to save offline)','err'); }
 }
-async function downscaleDataURL(src, max){
+async function downscaleDataURL(src, max, q){
   const im=await loadImg(src);
   let w=im.width, h=im.height;
   if(Math.max(w,h)>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
   const c=document.createElement('canvas'); c.width=w; c.height=h;
   const ctx=c.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; // V3.7: crisp downscale
   ctx.drawImage(scaledSource(im,w,h),0,0,w,h);
-  return c.toDataURL('image/jpeg',0.9);
+  return c.toDataURL('image/jpeg', (typeof q==='number'?q:0.9));
 }
 function renderGarmentLock(){
   const el=document.getElementById('garmentLockPanel');
-  if(!el) return;
+  if(el){
   if(S.lockedGarment){
     el.innerHTML=`<label class="sub-label">Locked Garment</label>
       <div class="lock-row">
@@ -1880,13 +2081,15 @@ function renderGarmentLock(){
         <button class="mini-pill" ${can?'':'disabled'} onclick="lockCurrentGarment()">${can?'Lock current render':'Generate a render first'}</button>
       </div>`;
   }
+  }
+  renderLockBar();
 }
 async function lockCurrentGarment(){ if(S.current) await lockGarmentFrom(S.current); }
 async function lockGarmentById(id){ const r=findRender(id); if(r) await lockGarmentFrom(r); }
 async function lockGarmentFrom(r){
   const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
   try{
-    const small = await downscaleDataURL(src, 768);
+    const small = await downscaleDataURL(src, 1024, 0.95);   // V4.3 — higher-fidelity garment plate
     S.lockedGarment = { image:small, label:r.styleName||'Garment' };
     persistGarmentLock();
     renderGarmentLock(); renderTray();
@@ -1905,7 +2108,7 @@ function persistGarmentLock(){
 }
 function renderBackgroundLock(){
   const el=document.getElementById('bgLockPanel');
-  if(!el) return;
+  if(el){
   if(S.lockedBackground){
     el.innerHTML=`<label class="sub-label">Locked Background</label>
       <div class="lock-row">
@@ -1921,6 +2124,8 @@ function renderBackgroundLock(){
         <button class="mini-pill" ${can?'':'disabled'} onclick="lockCurrentBackground()">${can?'Lock current background':'Select a scene render first'}</button>
       </div>`;
   }
+  }
+  renderLockBar();
 }
 async function lockCurrentBackground(){ if(S.current) await lockBackgroundFrom(S.current); }
 async function lockBackgroundById(id){ const r=findRender(id); if(r) await lockBackgroundFrom(r); }
@@ -1929,7 +2134,7 @@ async function lockBackgroundFrom(r){
   if(r.transparent){ toast('That render is a transparent cutout — it has no background to lock','err'); return; }
   const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
   try{
-    const small = await downscaleDataURL(src, 768);
+    const small = await downscaleDataURL(src, 1024, 0.95);   // V4.3 — higher-fidelity scene plate
     S.lockedBackground = { image:small, label:r.styleName||'Scene' };
     persistBackgroundLock();
     renderBackgroundLock(); renderTray();
@@ -1958,6 +2163,7 @@ function buildMoveStillPrompt(meta){
 MODEL — Sex: ${m.gender}; Age: ${m.age}${isYouth(meta.model)?` (${meta.model.ageGroup} model)`:''}; Ethnicity: ${m.ethnicity||'unspecified'}; Skin tone: ${m.skin||'natural'}; Hair: ${m.hair||'natural'}.
 ${sexClause(meta.model)}
 ${angleClause(meta.angle)}
+${poseClause(meta)}
 ${complementClause(meta)}${youthClause(meta.model)}
 ${refClause}
 ${dir}
@@ -1973,6 +2179,10 @@ async function generateMoveVeo(meta){
   const stillMeta = { ...meta, mode:'model' };
   const { imgs:lockImgs, clause:lockClause } = lockExtras(meta);
   let stillPrompt = buildMoveStillPrompt(meta) + lockClause;
+  // V4.3 — prepend the positional image manifest + priority ladder so the still
+  // generator can't confuse the garment photo for the locked model or background.
+  const manifest = buildImageManifest(meta);
+  if(manifest) stillPrompt = manifest + '\n' + PRIORITY_LADDER + '\n\n' + stillPrompt;
   const still = await callGemini(stillPrompt, stillMeta, 0, lockImgs);
   const poster = await fitToSpec(still, { ...meta.spec });
   // 2) Submit to Veo
@@ -2487,9 +2697,10 @@ function loadIntoForm(r){
   document.getElementById('fabric').value=r.meta.fabric;
   document.getElementById('notes').value=r.meta.notes||'';
   S.targetColor=r.meta.targetColor||null; refreshTargetColorUI();
-  S.refTop=null; S.refBottom=null; S.refFull=null; clearRef('top'); clearRef('bottom'); clearRef('full');
+  S.refTop=null; S.refBottom=null; S.refFull=null; S.refShoe=null; clearRef('top'); clearRef('bottom'); clearRef('full'); clearRef('shoe');
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   setAngle(r.meta.angle||'front');
+  S.pose=(r.meta.pose && POSES.some(p=>p[0]===r.meta.pose))?r.meta.pose:'natural'; buildPoseOptions();
   if(r.meta.backdrop){
     S.bgColor=r.meta.backdrop.color||'#FFFFFF'; S.bgColorLabel=r.meta.backdrop.label||'White';
     S.naturalLight=!!r.meta.backdrop.naturalLight; S.gradient=!!r.meta.backdrop.gradient;
