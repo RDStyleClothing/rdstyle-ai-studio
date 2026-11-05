@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V4.4</title>
+<title>RD STYLE AI STUDIO — V4.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -198,6 +198,13 @@ select.select option{background:#0d0d0d}
 /* TRAY */
 .tray{height:200px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column}
 .tray-head{padding:11px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--fill)}
+.shoot-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.shoot-sel{background:var(--fill);border:1px solid var(--line);border-radius:999px;color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:0.06em;padding:6px 12px;max-width:220px;cursor:pointer;outline:none}
+.shoot-btn{background:rgba(255,255,255,0.08);border:1px solid var(--line);color:#fff;font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px;cursor:pointer}
+.shoot-btn:hover{background:rgba(255,255,255,0.18)}
+.shoot-btn.del:hover{background:rgba(239,68,68,0.25)}
+.shoot-btn.hidden{display:none}
+.tray-head{flex-wrap:wrap;gap:8px}
 .tray-head h2{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted)}
 .tray-head .stat{font-family:var(--font-mono);font-size:9px;color:#555;display:flex;gap:12px;align-items:center}
 .tray-body{flex:1;display:flex;gap:14px;padding:16px;overflow-x:auto}
@@ -324,7 +331,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.4</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.7</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -644,7 +651,13 @@ select.select option{background:#0d0d0d}
       <!-- TRAY -->
       <div class="tray">
         <div class="tray-head">
-          <h2>Studio Gallery · Recent Assets</h2>
+          <div class="shoot-bar">
+            <h2>Studio Gallery</h2>
+            <select class="shoot-sel" id="shootSel" onchange="switchShoot(this.value)" title="Shoot group — each group keeps its own settings, references &amp; locks"></select>
+            <button class="shoot-btn" onclick="newShoot()" title="New group from the current settings">+ New group</button>
+            <button class="shoot-btn" id="shootRenameBtn" onclick="renameShoot()" title="Rename this group">Rename</button>
+            <button class="shoot-btn del" id="shootDelBtn" onclick="deleteShoot()" title="Delete this group (renders stay in the catalog)">Delete</button>
+          </div>
           <div class="stat"><span id="trayCount">0 OBJECTS</span><i style="width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)"></i><span>FRONTAL · 3:4</span></div>
         </div>
         <div class="tray-body" id="trayBody">
@@ -667,6 +680,7 @@ select.select option{background:#0d0d0d}
         <input type="text" id="filterText" class="text-input" placeholder="Search by style name…" oninput="renderCatalog()"/>
         <select class="select" id="filterCat" onchange="renderCatalog()"><option value="">All Categories</option></select>
         <select class="select" id="filterMode" onchange="renderCatalog()"><option value="">All Modes</option><option value="render">Ghost Mannequin</option><option value="model">On Model</option><option value="move">Move (Loop)</option></select>
+        <select class="select" id="filterShoot" onchange="renderCatalog()"><option value="">All Groups</option></select>
         <button class="btn-secondary" style="flex:0 0 auto;padding:13px 18px" onclick="batchExport()">Batch Export</button>
       </div>
       <div id="catGridWrap"></div>
@@ -836,6 +850,41 @@ select.select option{background:#0d0d0d}
 // (3) FOOTWEAR REFERENCE: a new per-shoot upload (S.refShoe) attaches the exact
 //     shoes to On-Model / Move renders via FOOTWEAR_REF_CLAUSE so the model
 //     wears those shoes; it is enumerated in the image manifest like the garment.
+// =====================================================================
+// V4.7 — SHOOT GROUPS.
+// Organise a photo shoot into named groups (e.g. "Fall Campaign · Look 1").
+// Each group keeps its OWN settings version: the whole left sidebar (style,
+// colour, fabric, mode, category, fit, model config, pose, backdrop, output
+// spec, Art Direction), the uploaded reference images (Source + Footwear) AND
+// the Model / Garment / Background locks. Every render made while a group is
+// active is tagged to it (render.shootId) and the Studio Gallery shows that
+// group's renders. Clicking thumbnails stays VIEW-ONLY (V4.5) — the sidebar only
+// changes when you switch GROUPS, which saves the outgoing group's settings and
+// restores the incoming group's. Groups persist in IndexedDB (store 'shoots',
+// DB v2) and the active group's settings auto-save as you edit.
+// "Session (ungrouped)" keeps the old behaviour. Catalog gains a group filter
+// and an "Add to active group" action for older renders.
+// =====================================================================
+// =====================================================================
+// V4.6 — CLEAN-PLATE BACKGROUND LOCK.
+// Locking a background used to store the WHOLE render (model + outfit + scene),
+// so Gemini copied the person/clothes into the next shot. Now lockBackgroundFrom()
+// first asks Gemini for an EMPTY CLEAN PLATE of that scene (person and garments
+// removed, background reconstructed behind them) and locks ONLY that plate.
+// BACKGROUND_LOCK_CLAUSE + the manifest describe it as an empty environment.
+// If the clean-plate call fails (no key / error), the lock falls back to the
+// full frame and is flagged "contains model" so the user can retry.
+// =====================================================================
+// =====================================================================
+// V4.5 — BROWSE WITHOUT LOSING THE SHOOT.
+// Clicking a Studio Gallery thumbnail (or the catalog's "View" eye) is now
+// VIEW-ONLY: it shows the render on the stage but leaves every Studio setting,
+// lock and reference image exactly as set. Pulling a past render's settings
+// back into the form is an explicit action: the new "Load settings" button
+// (tray + catalog) or Redo. Loading settings never clears uploaded reference
+// images (Source / Footwear) — those can't be restored from a saved render, so
+// wiping them only lost work; locks were never touched and still aren't.
+// =====================================================================
 const CATEGORIES = ['T-Shirt','Tank','Shirt','Sweater','Knitwear','Woven','Outerwear','Denim','Bottoms','Skirt','Dress','Jumpsuit','Outfit','Activewear','Accessories'];
 const FITS = ['Slim','Relaxed','Tailored','Oversized'];
 // Camera angles for On-Model & Move stills. [id, short button label].
@@ -936,6 +985,8 @@ const S = {
   current:null,          // current preview render object
   session:[],            // in-session renders (newest first)
   catalog:[],            // persisted renders (newest first)
+  shoots:[],             // V4.7 — shoot groups { id, name, created, updated, settings }
+  activeShootId:'',      // V4.7 — '' = Session (ungrouped)
   processing:false,
 };
 // ---------- INIT ----------
@@ -949,7 +1000,7 @@ function init(){
   const lg = localStorage.getItem('rd_locked_garment');
   if(lg) S.lockedGarment = { image:lg, label: localStorage.getItem('rd_locked_garment_label')||'Garment' };
   const lb = localStorage.getItem('rd_locked_background');
-  if(lb) S.lockedBackground = { image:lb, label: localStorage.getItem('rd_locked_background_label')||'Scene' };
+  if(lb) S.lockedBackground = { image:lb, label: localStorage.getItem('rd_locked_background_label')||'Scene', clean: localStorage.getItem('rd_locked_background_clean')==='1' };
   loadConfig();               // restore saved Output Size / mode / model settings
   buildCategoryButtons();
   buildFitButtons();
@@ -975,7 +1026,8 @@ function init(){
   renderLockBar();
   updateKeyDot();
   S._initing=false;
-  openDB().then(loadCatalog);
+  openDB().then(()=>{ loadCatalog(); loadShoots(); });
+  document.addEventListener('input', onSidebarEdit); document.addEventListener('change', onSidebarEdit);
 }
 // ---------- SETTINGS PERSISTENCE (Output Size, mode, model config) ----------
 // Persists the "how I like renders set up" settings so they survive reloads.
@@ -984,6 +1036,7 @@ function init(){
 // so a brand-new browser starts with them unselected (the V3.5 required gate).
 function saveConfig(){
   if(S._initing) return;
+  scheduleShootSave();
   try{
     const cfg = {
       spec:S.spec, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, ageGroup:S.ageGroup, pose:S.pose, moveEngine:S.moveEngine,
@@ -1226,7 +1279,7 @@ function processRefFile(file, which){
   if(!/^image\//.test(file.type||'')){ toast('Please use an image file','err'); return; }
   if(which!=='shoe') autofillFromFilename(file.name);
   const reader = new FileReader();
-  reader.onloadend = ()=>{ setRefVal(which, reader.result); showRefPreview(which); updateRefModeNote(); if(which!=='shoe') clearMark('refGrid'); };
+  reader.onloadend = ()=>{ setRefVal(which, reader.result); showRefPreview(which); updateRefModeNote(); if(which!=='shoe') clearMark('refGrid'); scheduleShootSave(); };
   reader.onerror = ()=>toast('Could not read that image','err');
   reader.readAsDataURL(file);
 }
@@ -1317,6 +1370,7 @@ function clearRef(which){
     </button>
     <input type="file" id="${cfg.input}" accept="image/*" class="hidden" onchange="handleRef(event,'${which}')"/>`;
   updateRefModeNote();
+  scheduleShootSave();
 }
 // =====================================================================
 // =====================================================================
@@ -1826,6 +1880,7 @@ async function generate(){
     const render = {
       id: crypto.randomUUID(),
       styleName, image, video, poster, kind, ephemeral, meta, transparent,
+      shootId: S.activeShootId||null,
       timestamp: Date.now(),
       filename: buildFilename(styleName, meta),
     };
@@ -1944,7 +1999,7 @@ function modelLockClause(model){
 }
 function modelLockRefs(){ return S.lockedModel ? [S.lockedModel.image] : []; }
 function garmentLockRefs(){ return S.lockedGarment ? [S.lockedGarment.image] : []; }
-const BACKGROUND_LOCK_CLAUSE = `BACKGROUND / SCENE LOCK: One attached reference image is provided ONLY to fix the BACKGROUND and environment — reproduce its setting, location, backdrop, surfaces, props, depth, perspective, time of day, colour palette and lighting faithfully, so every shot shares the same place. Take NOTHING ELSE from this reference: IGNORE any garment, person, model or mannequin shown in it — the hero garment and the model are defined above and must be placed INTO this environment. This background must read as unmistakably the same location across every shot.`;
+const BACKGROUND_LOCK_CLAUSE = `BACKGROUND / SCENE LOCK: One attached reference image is an EMPTY BACKGROUND PLATE — the location with no people in it. It is provided ONLY to fix the BACKGROUND and environment — reproduce its setting, location, backdrop, surfaces, props, depth, perspective, time of day, colour palette and lighting faithfully, so every shot shares the same place. It contributes NOTHING about the person or clothing: do NOT copy any body, face, pose, garment, accessory or footwear from it, and if any trace of a person or clothing remains in it, ignore it completely. The hero garment and the model are defined above and must be placed INTO this empty environment. This background must read as unmistakably the same location across every shot.`;
 function backgroundLockRefs(){ return S.lockedBackground ? [S.lockedBackground.image] : []; }
 function isCutoutMeta(meta){ return !!(meta && meta.mode!=='render' && meta.spec && meta.spec.bg==='transparent' && meta.spec.format!=='jpeg'); }
 const GARMENT_LOCK_CLAUSE = `GARMENT LOCK: One attached reference image shows the EXACT garment to depict. Replicate this same physical product precisely — identical color/colorway, fabric, knit/weave, pattern, panel construction, seams, trims, buttons and proportions — even when shown from a different camera angle. Ignore any person, mannequin or background in that reference; copy only the garment. This must be the same item across every shot.`;
@@ -1969,7 +2024,7 @@ function buildImageManifest(meta){
   if(S.refBottom) add('SOURCE GARMENT REFERENCE (bottom) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
   if(S.lockedGarment) add('LOCKED GARMENT — the exact physical garment to reproduce across shots; copy ONLY the garment, ignore any person or background in it.');
   if(S.lockedModel && usesModel) add('LOCKED MODEL IDENTITY — the exact person to reproduce (face, build, hair, skin, sex); copy ONLY the identity, and IGNORE its garment, pose, background and lighting.');
-  if(S.lockedBackground && usesModel && !isCutoutMeta(meta)) add('LOCKED BACKGROUND — the exact scene / environment to reproduce; copy ONLY the setting, ignore any person or garment shown in it.');
+  if(S.lockedBackground && usesModel && !isCutoutMeta(meta)) add('LOCKED BACKGROUND — an EMPTY scene plate (no person); reproduce ONLY the setting. Never take any person, pose or clothing from this image.');
   if(S.refShoe && usesModel) add('FOOTWEAR REFERENCE — the exact shoes the model must wear; copy ONLY the footwear, ignore any person, garment or background shown in it.');
   if(!lines.length) return '';
   return `ATTACHED REFERENCE IMAGES — there ${n===1?'is 1 image':'are '+n+' images'}, in THIS exact order. Use each image ONLY for its stated role and never treat one as another:\n${lines.join('\n')}`;
@@ -1987,6 +2042,7 @@ function lockExtras(meta){
 // a per-lock unlock button and a Clear-all-locks action, so a lock set in an
 // earlier session can't silently keep steering new renders.
 function renderLockBar(){
+  scheduleShootSave();
   const el=document.getElementById('lockBar'); if(!el) return;
   const locks=[];
   if(S.lockedModel) locks.push(['Model', S.lockedModel.label, 'unlockModel']);
@@ -2000,7 +2056,7 @@ function renderLockBar(){
 }
 function clearAllLocks(){
   S.lockedModel=null; S.lockedGarment=null; S.lockedBackground=null;
-  ['rd_locked_model','rd_locked_model_label','rd_locked_model_meta','rd_locked_garment','rd_locked_garment_label','rd_locked_background','rd_locked_background_label'].forEach(k=>localStorage.removeItem(k));
+  ['rd_locked_model','rd_locked_model_label','rd_locked_model_meta','rd_locked_garment','rd_locked_garment_label','rd_locked_background','rd_locked_background_label','rd_locked_background_clean'].forEach(k=>localStorage.removeItem(k));
   renderModelLock(); renderGarmentLock(); renderBackgroundLock(); renderTray();
   toast('All locks cleared');
 }
@@ -2113,7 +2169,7 @@ function renderBackgroundLock(){
     el.innerHTML=`<label class="sub-label">Locked Background</label>
       <div class="lock-row">
         <img src="${S.lockedBackground.image}" class="lock-thumb" alt="Locked background"/>
-        <div class="lock-info"><div class="lock-on">● Background locked</div><div class="lock-sub">${esc(S.lockedBackground.label)} — new On-Model &amp; Move scenes reuse this exact setting. Ignored for Transparent cutouts.</div></div>
+        <div class="lock-info"><div class="lock-on">● Background locked${S.lockedBackground.clean?' · scene only':''}</div><div class="lock-sub">${esc(S.lockedBackground.label)} — ${S.lockedBackground.clean?'model removed; ':'<b>still contains the model</b> — unlock and re-lock to remove it; '}new On-Model &amp; Move scenes reuse this exact setting. Ignored for Transparent cutouts.</div></div>
         <button class="mini-pill" onclick="unlockBackground()">Unlock</button>
       </div>`;
   }else{
@@ -2129,26 +2185,40 @@ function renderBackgroundLock(){
 }
 async function lockCurrentBackground(){ if(S.current) await lockBackgroundFrom(S.current); }
 async function lockBackgroundById(id){ const r=findRender(id); if(r) await lockBackgroundFrom(r); }
+const CLEAN_PLATE_PROMPT = `Return this exact photograph as an EMPTY BACKGROUND PLATE. Completely REMOVE every person, model, mannequin, body part, garment, accessory, footwear and shadow cast by them. Reconstruct the background that was hidden behind them so the location looks naturally empty, as if photographed before the model stepped in. Keep EVERYTHING else identical: same location, camera position, framing, perspective, lens, depth of field, surfaces, props, lighting direction, time of day and colour grade. Do not add any new objects or people. Output only the empty scene photograph.`;
+async function makeCleanPlate(src, r){
+  if(!S.apiKey) throw new Error('No Gemini key');
+  const meta = { spec: r.meta && r.meta.spec, aspectRatio: r.meta && r.meta.aspectRatio };
+  return callGemini(CLEAN_PLATE_PROMPT, meta, 0, [], false, [src]);
+}
+let bgLockBusy=false;
 async function lockBackgroundFrom(r){
   if(!(r.meta.mode==='model'||r.meta.mode==='move')){ toast('Background lock works on On-Model or Move renders only','err'); return; }
   if(r.transparent){ toast('That render is a transparent cutout — it has no background to lock','err'); return; }
+  if(bgLockBusy){ toast('Already building a background plate…'); return; }
   const src = (r.kind==='video' && r.poster) ? r.poster : r.image;
+  bgLockBusy=true;
+  toast('Removing the model to build a clean background plate…');
+  let plate=src, clean=false;
+  try{ plate = await makeCleanPlate(src, r); clean=true; }
+  catch(e){ console.warn('Clean plate failed:', e); }
   try{
-    const small = await downscaleDataURL(src, 1024, 0.95);   // V4.3 — higher-fidelity scene plate
-    S.lockedBackground = { image:small, label:r.styleName||'Scene' };
+    const small = await downscaleDataURL(plate, 1024, 0.95);   // V4.3 — higher-fidelity scene plate
+    S.lockedBackground = { image:small, label:r.styleName||'Scene', clean };
     persistBackgroundLock();
     renderBackgroundLock(); renderTray();
-    toast('Background locked — new scenes will reuse this setting');
+    toast(clean ? 'Background locked — model removed, scene only' : 'Background locked, but the model could not be removed — try locking again', clean?undefined:'err');
   }catch(e){ toast('Could not lock background','err'); }
+  finally{ bgLockBusy=false; }
 }
 function unlockBackground(){
   S.lockedBackground=null;
-  localStorage.removeItem('rd_locked_background'); localStorage.removeItem('rd_locked_background_label');
+  localStorage.removeItem('rd_locked_background'); localStorage.removeItem('rd_locked_background_label'); localStorage.removeItem('rd_locked_background_clean');
   renderBackgroundLock(); renderTray();
   toast('Background unlocked');
 }
 function persistBackgroundLock(){
-  try{ localStorage.setItem('rd_locked_background', S.lockedBackground.image); localStorage.setItem('rd_locked_background_label', S.lockedBackground.label||''); }
+  try{ localStorage.setItem('rd_locked_background', S.lockedBackground.image); localStorage.setItem('rd_locked_background_label', S.lockedBackground.label||''); localStorage.setItem('rd_locked_background_clean', S.lockedBackground.clean?'1':'0'); }
   catch(e){ toast('Background locked for this session (too large to save offline)','err'); }
 }
 // Lifestyle on-model still for Move — honors Additional Art Direction for scene + styling
@@ -2662,14 +2732,162 @@ function batchExport(){
   toast(`Exporting ${list.length} asset${list.length>1?'s':''}…`);
 }
 // =====================================================================
+// SHOOT GROUPS (V4.7)
+// =====================================================================
+function shootName(id){ const g=S.shoots.find(x=>x.id===id); return g?g.name:''; }
+function captureSettings(){
+  const v=id=>{ const el=document.getElementById(id); return el?el.value:''; };
+  return {
+    cfg:{ spec:{...S.spec}, mode:S.mode, category:S.category, fit:S.fit, angle:S.angle, ageGroup:S.ageGroup, pose:S.pose, moveEngine:S.moveEngine,
+          bgColor:S.bgColor, bgColorLabel:S.bgColorLabel, naturalLight:S.naturalLight, gradient:S.gradient },
+    form:{ styleName:v('styleName'), colorName:v('colorName'), colorCode:v('colorCode'), fabricContent:v('fabricContent'), fabric:v('fabric'), notes:v('notes'),
+           moveMotion:v('moveMotion'), moveFrames:v('moveFrames'),
+           mGender:v('mGender'), mAge:v('mAge'), mEthnicity:v('mEthnicity'), mSkin:v('mSkin'), mHair:v('mHair') },
+    targetColor:S.targetColor||null,
+    refs:{ top:S.refTop, bottom:S.refBottom, full:S.refFull, shoe:S.refShoe },
+    locks:{ model:S.lockedModel, garment:S.lockedGarment, background:S.lockedBackground },
+  };
+}
+function writeLocksToStorage(){
+  const rm=k=>localStorage.removeItem(k);
+  if(S.lockedModel) persistLock(); else ['rd_locked_model','rd_locked_model_label','rd_locked_model_meta'].forEach(rm);
+  if(S.lockedGarment) persistGarmentLock(); else ['rd_locked_garment','rd_locked_garment_label'].forEach(rm);
+  if(S.lockedBackground) persistBackgroundLock(); else ['rd_locked_background','rd_locked_background_label','rd_locked_background_clean'].forEach(rm);
+}
+function applySettings(snap){
+  if(!snap) return;
+  S._applyingShoot=true;
+  try{
+    const c=snap.cfg||{}, f=snap.form||{};
+    if(c.spec) S.spec={...S.spec, ...c.spec};
+    S.ageGroup=(c.ageGroup && AGE_OPTIONS[c.ageGroup]) ? c.ageGroup : '';
+    S.pose=(c.pose && POSES.some(p=>p[0]===c.pose)) ? c.pose : 'natural';
+    S.bgColor=c.bgColor||'#FFFFFF'; S.bgColorLabel=c.bgColorLabel||'White';
+    S.naturalLight=!!c.naturalLight; S.gradient=!!c.gradient;
+    setMode(c.mode||'render'); setCategory(c.category||''); setFit(c.fit||''); setAngle(c.angle||'front');
+    if(c.moveEngine) setMoveEngine(c.moveEngine);
+    buildPoseOptions(); buildAgeGroupButtons(); buildGenderOptions(f.mGender); buildAgeOptions(f.mAge);
+    const nb=document.getElementById('naturalLightBtn'); if(nb) nb.classList.toggle('active',S.naturalLight);
+    const gb=document.getElementById('gradientBtn'); if(gb) gb.classList.toggle('active',S.gradient);
+    buildBackdropSwatches(); refreshSpecUI();
+    for(const id in f){ const el=document.getElementById(id); if(el && f[id]!=null) el.value=f[id]; }
+    S.targetColor=snap.targetColor||null; refreshTargetColorUI();
+    const r=snap.refs||{};
+    ['top','bottom','full','shoe'].forEach(w=>{ if(r[w]){ setRefVal(w,r[w]); showRefPreview(w); } else clearRef(w); });
+    updateRefModeNote();
+    const l=snap.locks||{};
+    S.lockedModel=l.model||null; S.lockedGarment=l.garment||null; S.lockedBackground=l.background||null;
+    writeLocksToStorage();
+    renderModelLock(); renderGarmentLock(); renderBackgroundLock();
+  }finally{ S._applyingShoot=false; }
+  saveConfig();
+}
+function dbPutShoot(g){
+  if(!DB) return;
+  try{ const tx=DB.transaction('shoots','readwrite'); tx.objectStore('shoots').put(g); tx.onerror=()=>toast('Could not save group (storage full?)','err'); }catch(e){ console.warn(e); }
+}
+let _shootSaveT=null;
+function scheduleShootSave(){
+  if(S._initing || S._applyingShoot || !S.activeShootId) return;
+  clearTimeout(_shootSaveT); _shootSaveT=setTimeout(saveActiveShootNow, 600);
+}
+function saveActiveShootNow(){
+  clearTimeout(_shootSaveT);
+  const g=S.shoots.find(x=>x.id===S.activeShootId); if(!g) return;
+  g.settings=captureSettings(); g.updated=Date.now(); dbPutShoot(g);
+}
+function onSidebarEdit(e){ if(e.target && e.target.closest && e.target.closest('.sidebar')) scheduleShootSave(); }
+function loadShoots(){
+  const done=()=>{
+    const want=localStorage.getItem('rd_active_shoot')||'';
+    const g=S.shoots.find(x=>x.id===want);
+    if(g){ S.activeShootId=g.id; applySettings(g.settings); }
+    renderShootBar(); renderTray(); buildShootFilter();
+  };
+  if(!DB || !DB.objectStoreNames.contains('shoots')) return done();
+  const rq=DB.transaction('shoots','readonly').objectStore('shoots').getAll();
+  rq.onsuccess=()=>{ S.shoots=(rq.result||[]).sort((a,b)=>a.created-b.created); done(); };
+  rq.onerror=done;
+}
+function setActiveShoot(id){
+  S.activeShootId=id||'';
+  if(S.activeShootId) localStorage.setItem('rd_active_shoot',S.activeShootId); else localStorage.removeItem('rd_active_shoot');
+}
+function switchShoot(id){
+  if(id===S.activeShootId) return;
+  if(S.activeShootId) saveActiveShootNow();          // keep the outgoing group's settings version
+  setActiveShoot(id);
+  const g=S.shoots.find(x=>x.id===id);
+  if(g) applySettings(g.settings);                    // restore the incoming group's settings version
+  renderShootBar(); renderTray(); renderCatalogIfOpen();
+  toast(g ? `Group: ${g.name} — settings, references & locks restored` : 'Session (ungrouped) — settings unchanged');
+}
+function newShoot(){
+  const n=S.shoots.length+1;
+  const name=(prompt('Name this group (e.g. "Fall Campaign · Look 1")', `Group ${n}`)||'').trim();
+  if(!name) return;
+  if(S.activeShootId) saveActiveShootNow();
+  const g={ id:crypto.randomUUID(), name, created:Date.now(), updated:Date.now(), settings:captureSettings() };
+  S.shoots.push(g); dbPutShoot(g);
+  setActiveShoot(g.id);
+  renderShootBar(); renderTray(); buildShootFilter(); renderCatalogIfOpen();
+  toast(`Group “${name}” created from the current settings`);
+}
+function renameShoot(){
+  const g=S.shoots.find(x=>x.id===S.activeShootId); if(!g) return;
+  const name=(prompt('Rename group', g.name)||'').trim(); if(!name) return;
+  g.name=name; g.updated=Date.now(); dbPutShoot(g);
+  renderShootBar(); buildShootFilter(); renderCatalogIfOpen();
+}
+function deleteShoot(){
+  const g=S.shoots.find(x=>x.id===S.activeShootId); if(!g) return;
+  if(!confirm(`Delete the group “${g.name}”? Its renders stay in the catalog (ungrouped).`)) return;
+  S.shoots=S.shoots.filter(x=>x.id!==g.id);
+  if(DB){ try{ DB.transaction('shoots','readwrite').objectStore('shoots').delete(g.id); }catch(e){} }
+  S.catalog.filter(r=>r.shootId===g.id).forEach(r=>{ r.shootId=null; putRender(r); });
+  setActiveShoot('');
+  renderShootBar(); renderTray(); buildShootFilter(); renderCatalogIfOpen();
+  toast('Group deleted — settings left as they were');
+}
+function putRender(r){ if(!DB) return; try{ DB.transaction('renders','readwrite').objectStore('renders').put(r); }catch(e){ console.warn(e); } }
+function assignToActiveShoot(id){
+  const r=findRender(id); if(!r || !S.activeShootId) return;
+  r.shootId=S.activeShootId;
+  const c=S.catalog.find(x=>x.id===id); if(c && c!==r) c.shootId=S.activeShootId;
+  putRender(c||r); renderTray(); renderCatalogIfOpen();
+  toast(`Added to “${shootName(S.activeShootId)}”`);
+}
+function renderShootBar(){
+  const sel=document.getElementById('shootSel'); if(!sel) return;
+  sel.innerHTML=`<option value="">Session (ungrouped)</option>`+S.shoots.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  sel.value=S.activeShootId||'';
+  const has=!!S.activeShootId;
+  document.getElementById('shootRenameBtn').classList.toggle('hidden',!has);
+  document.getElementById('shootDelBtn').classList.toggle('hidden',!has);
+}
+function buildShootFilter(){
+  const sel=document.getElementById('filterShoot'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">All Groups</option><option value="__none">Ungrouped</option>`+S.shoots.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  sel.value=[...sel.options].some(o=>o.value===cur)?cur:'';
+}
+function renderCatalogIfOpen(){ const t=document.getElementById('catalogTab'); if(t && t.classList.contains('active')) renderCatalog(); }
+// =====================================================================
 // SESSION TRAY
 // =====================================================================
+function trayList(){
+  if(S.activeShootId) return S.catalog.filter(r=>r.shootId===S.activeShootId).sort((a,b)=>b.timestamp-a.timestamp);
+  return S.session;
+}
 function renderTray(){
   const body=document.getElementById('trayBody');
-  document.getElementById('trayCount').textContent=`${S.session.length} OBJECTS`;
-  if(!S.session.length){ body.innerHTML='<div class="tray-empty">Studio history is empty. Generate your first asset to see it here.</div>'; return; }
-  body.innerHTML=S.session.map(r=>`
-    <div class="tray-card ${r.transparent?'transparent':''} ${S.current&&S.current.id===r.id?'active':''}" onclick="selectRender('${r.id}')">
+  const list=trayList();
+  document.getElementById('trayCount').textContent=`${list.length} OBJECTS`;
+  if(!list.length){ body.innerHTML= S.activeShootId
+      ? `<div class="tray-empty">No renders in “${esc(shootName(S.activeShootId))}” yet. Renders you create now are added to this group.</div>`
+      : '<div class="tray-empty">Studio history is empty. Generate your first asset to see it here.</div>'; return; }
+  body.innerHTML=list.map(r=>`
+    <div class="tray-card ${r.transparent?'transparent':''} ${S.current&&S.current.id===r.id?'active':''}" title="View (settings unchanged)" onclick="selectRender('${r.id}')">
       ${r.kind==='video'?'<div class="play-badge"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>MP4</div>':''}
       <img src="${r.image}" alt="${esc(r.styleName)}"/>
       <div class="tray-ov">
@@ -2677,6 +2895,7 @@ function renderTray(){
         <div class="mini-acts">
           <button class="mini-btn" title="Download" onclick="event.stopPropagation();downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
           <button class="mini-btn" title="Share" onclick="event.stopPropagation();shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          <button class="mini-btn" title="Load settings (keeps references &amp; locks)" onclick="event.stopPropagation();loadSettingsById('${r.id}')"><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
           <button class="mini-btn" title="Redo" onclick="event.stopPropagation();redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
           ${(r.meta.mode==='model'||r.meta.mode==='move')?`<button class="mini-btn" title="Lock this model" onclick="event.stopPropagation();lockModelById('${r.id}')"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>`:''}
           ${((r.meta.mode==='model'||r.meta.mode==='move')&&!r.transparent)?`<button class="mini-btn" title="Lock this background" onclick="event.stopPropagation();lockBackgroundById('${r.id}')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>`:''}
@@ -2686,7 +2905,8 @@ function renderTray(){
       </div>
     </div>`).join('');
 }
-function selectRender(id){ const r=findRender(id); if(r){ showResult(r); loadIntoForm(r); renderTray(); } }
+function selectRender(id){ const r=findRender(id); if(r){ showResult(r); renderTray(); } }
+function loadSettingsById(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); showResult(r); switchTab('studio'); renderTray(); toast('Settings loaded — references & locks kept'); }
 function shareById(id){ const r=findRender(id); if(r) shareRender(r); }
 function findRender(id){ return S.session.find(r=>r.id===id) || S.catalog.find(r=>r.id===id); }
 function loadIntoForm(r){
@@ -2697,7 +2917,6 @@ function loadIntoForm(r){
   document.getElementById('fabric').value=r.meta.fabric;
   document.getElementById('notes').value=r.meta.notes||'';
   S.targetColor=r.meta.targetColor||null; refreshTargetColorUI();
-  S.refTop=null; S.refBottom=null; S.refFull=null; S.refShoe=null; clearRef('top'); clearRef('bottom'); clearRef('full'); clearRef('shoe');
   setMode(r.meta.mode); setCategory(r.meta.category); setFit(r.meta.fit);
   setAngle(r.meta.angle||'front');
   S.pose=(r.meta.pose && POSES.some(p=>p[0]===r.meta.pose))?r.meta.pose:'natural'; buildPoseOptions();
@@ -2731,8 +2950,8 @@ function redoRender(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); 
 let DB=null;
 function openDB(){
   return new Promise((res)=>{
-    const req=indexedDB.open('rd_style_studio',1);
-    req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains('renders')) db.createObjectStore('renders',{keyPath:'id'}); };
+    const req=indexedDB.open('rd_style_studio',2);
+    req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains('renders')) db.createObjectStore('renders',{keyPath:'id'}); if(!db.objectStoreNames.contains('shoots')) db.createObjectStore('shoots',{keyPath:'id'}); };
     req.onsuccess=e=>{ DB=e.target.result; res(); };
     req.onerror=()=>{ console.warn('IndexedDB unavailable'); res(); };
   });
@@ -2748,7 +2967,7 @@ function saveToCatalog(render){
 function loadCatalog(){
   if(!DB){ updateCounts(); return; }
   const tx=DB.transaction('renders','readonly'); const rq=tx.objectStore('renders').getAll();
-  rq.onsuccess=()=>{ S.catalog=(rq.result||[]).sort((a,b)=>b.timestamp-a.timestamp); updateCounts(); };
+  rq.onsuccess=()=>{ S.catalog=(rq.result||[]).sort((a,b)=>b.timestamp-a.timestamp); updateCounts(); renderTray(); };
 }
 function deleteRender(id){
   if(!confirm('Delete this render from the catalog?')) return;
@@ -2766,7 +2985,9 @@ function filteredCatalog(){
   const q=document.getElementById('filterText').value.toLowerCase().trim();
   const fc=document.getElementById('filterCat').value;
   const fm=document.getElementById('filterMode').value;
+  const fs=(document.getElementById('filterShoot')||{}).value||'';
   return S.catalog.filter(r=>
+    (!fs || (fs==='__none' ? !r.shootId : r.shootId===fs)) &&
     (!q||r.styleName.toLowerCase().includes(q)) &&
     (!fc||r.meta.category===fc) &&
     (!fm||r.meta.mode===fm)
@@ -2789,19 +3010,21 @@ function renderCatalog(){
         <div class="cat-acts">
           <button class="cact dl full" onclick="downloadRender('${r.id}')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
           <button class="cact gh full" onclick="shareById('${r.id}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
-          <button class="cact gh" title="Open in Studio" onclick="openInStudio('${r.id}')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="cact gh" title="View in Studio (settings unchanged)" onclick="openInStudio('${r.id}')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="cact gh" title="Load settings (keeps references &amp; locks)" onclick="loadSettingsById('${r.id}')"><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
           <button class="cact gh" title="Redo" onclick="redoRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
           ${r.kind!=='video'?`<button class="cact gh" title="Recolour / colourways" onclick="openRecolor('${r.id}')"><svg viewBox="0 0 24 24"><path d="M12 2.6S5.5 9.8 5.5 14a6.5 6.5 0 0 0 13 0c0-4.2-6.5-11.4-6.5-11.4z"/></svg></button>`:''}
+          ${(S.activeShootId && r.shootId!==S.activeShootId)?`<button class="cact gh" title="Add to active group" onclick="assignToActiveShoot('${r.id}')"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button>`:''}
           <button class="cact del" title="Delete" onclick="deleteRender('${r.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         </div>
       </div>
       <div class="cat-info">
         <div class="row"><span class="nm">${esc(r.styleName)}</span><span class="dt">${new Date(r.timestamp).toLocaleDateString()}</span></div>
-        <div class="sub">${esc(r.meta.category)} · ${r.meta.mode==='move'?(r.kind==='video'?'Move · MP4':'Move · GIF'):(r.transparent?'Transparent':'On Model')}${(r.meta.mode!=='move'&&r.meta.spec)?` · ${r.meta.spec.width}×${r.meta.spec.height}`:''}</div>
+        <div class="sub">${r.shootId&&shootName(r.shootId)?`<b>${esc(shootName(r.shootId))}</b> · `:''}${esc(r.meta.category)} · ${r.meta.mode==='move'?(r.kind==='video'?'Move · MP4':'Move · GIF'):(r.transparent?'Transparent':'On Model')}${(r.meta.mode!=='move'&&r.meta.spec)?` · ${r.meta.spec.width}×${r.meta.spec.height}`:''}</div>
       </div>
     </div>`).join('')}</div>`;
 }
-function openInStudio(id){ const r=findRender(id); if(!r)return; loadIntoForm(r); showResult(r); switchTab('studio'); }
+function openInStudio(id){ const r=findRender(id); if(!r)return; showResult(r); switchTab('studio'); renderTray(); }
 // =====================================================================
 // SETTINGS / RATE LIMIT / TOAST
 // =====================================================================
@@ -2976,7 +3199,7 @@ async function generateColorways(){
       image=await fitToSpec(image, spec, onModelScene ? (base.meta.backdrop&&base.meta.backdrop.color) : null);
       const meta={ ...base.meta, colorName:(s.name||ctx.pantone), colorCode:'', targetColor:s.hex, notes:'' };
       const transparent=((meta.mode==='render'||meta.mode==='model') && spec.format!=='jpeg' && spec.bg==='transparent');
-      const render={ id:crypto.randomUUID(), styleName:base.styleName, image, video:null, poster:null, kind:'image', ephemeral:false, meta, transparent, timestamp:Date.now(), filename:buildFilename(base.styleName, meta) };
+      const render={ id:crypto.randomUUID(), styleName:base.styleName, image, video:null, poster:null, kind:'image', ephemeral:false, meta, transparent, shootId:(S.activeShootId||base.shootId||null), timestamp:Date.now(), filename:buildFilename(base.styleName, meta) };
       S.session=[render,...S.session].slice(0,12);
       await saveToCatalog(render); last=render; made++; renderTray();
     }catch(err){
