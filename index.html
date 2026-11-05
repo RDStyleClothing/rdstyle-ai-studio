@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RD STYLE AI STUDIO — V4.8</title>
+<title>RD STYLE AI STUDIO — V4.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -343,7 +343,7 @@ select.select option{background:#0d0d0d}
   <div class="logo">
     <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
     <div>
-      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.8</span></div>
+      <div class="logo-title">RD Style AI Studio<span class="version-badge">V4.9</span></div>
       <div class="logo-sub">Menswear Render Engine</div>
     </div>
   </div>
@@ -925,7 +925,7 @@ const POSES = [
   ['glance','Over-the-shoulder glance','turned slightly away with an over-the-shoulder glance back toward the camera'],
   ['turn','Three-quarter turn','a graceful three-quarter turn that shows the side of the garment while the face angles toward camera'],
   ['lean','Leaning','leaning casually against a wall or surface with a laid-back editorial posture'],
-  ['seated','Seated','seated in a relaxed, elegant pose that keeps the garment lines clean and readable'],
+  ['seated','Seated','seated naturally on a real, visible piece of furniture that fits the scene — a chair, armchair, sofa, bench, stool, window seat or step — fully and believably supported by it, in a relaxed, elegant pose that keeps the garment lines clean and readable'],
   ['cross','Arms crossed','standing with arms crossed, a strong confident posture with the chin slightly up'],
   ['adjust','Adjusting the garment','a natural gesture adjusting the collar, cuff or sleeve that draws attention to the construction'],
   ['twist','Dynamic twist','a dynamic torso twist with the fabric in motion, an expressive high-fashion runway feel'],
@@ -1492,9 +1492,18 @@ function angleClause(angle){
 }
 // V4.4 — base model pose from the Pose bank. The Art Direction field overrides it.
 function poseClause(meta){
-  const txt = poseClauseText(meta.pose || 'natural');
+  const id = meta.pose || 'natural';
+  const txt = poseClauseText(id);
   const override = meta.notes ? ' If the ART DIRECTION above describes a different pose, gesture or action, FOLLOW THE ART DIRECTION instead of this base pose.' : '';
-  return `MODEL POSE (base): the model is ${txt}.${override}`;
+  // V4.9 — seated/leaning poses must rest on a real, weight-bearing support so the
+  // model is never left floating; add one to the scene (or locked background) if absent.
+  let support='';
+  if(id==='seated'){
+    support = " SEATING / SUPPORT (CRITICAL): the model is genuinely sitting ON a real, solid seat — a chair, armchair, sofa, bench, stool, window seat or step — that visibly carries their weight, with hips and thighs resting on it. NEVER leave the model floating, hovering, crouching or balanced on nothing. If the scene (or the locked background) has no suitable seat, add ONE simple piece of seating that matches the setting's style and period, placed naturally so the seated pose reads as real.";
+  } else if(id==='lean'){
+    support = " SUPPORT (CRITICAL): the model is actually leaning against a real, solid surface — a wall, doorway, railing or sturdy furniture — that visibly bears their weight; never floating or tilted against nothing. If the scene has no such surface, add one that fits the setting.";
+  }
+  return `MODEL POSE (base): the model is ${txt}.${override}${support}`;
 }
 // On-Model photoshoot backdrop: color + optional natural light + gradient.
 function backdropClause(meta){
@@ -1659,6 +1668,10 @@ function headerSubject(model){
   if(model && model.ageGroup==='teen') return f?"young women's / teen apparel":m?"young men's / teen apparel":'youth apparel';
   return f?'womenswear':m?'menswear':'apparel';
 }
+// V4.9 — On-Model: force a single model and forbid the garment reference from
+// being composited into the scene as a second, floating or ghost-mannequin body
+// (the "phantom torso" artifact).
+const SINGLE_SUBJECT_RULE = "ONE MODEL ONLY — NO DUPLICATE OR FLOATING GARMENT: render EXACTLY ONE human model, alone in the frame, actually wearing the hero garment on their body. The garment appears ONLY as worn by that single model. Do NOT render the garment a second time as a separate, standalone, floating, hovering, laid-out, folded, hanging or ghost-mannequin copy; NO disembodied, headless or extra torso, body, bust or mannequin; no second person, twin, clone or reflection. Any attached garment reference guides the WORN garment only and must NEVER appear in the scene as its own object.";
 function buildPrompt(meta){
   const isRender = meta.mode==='render';
   const styleLine = meta.styleName || 'Unnamed garment';
@@ -1687,6 +1700,7 @@ function buildPrompt(meta){
     sexClause(meta.model),
     bgRule,
     styleRule,
+    SINGLE_SUBJECT_RULE,
     angleClause(meta.angle),
     poseClause(meta),
     "FRAMING: 3:4 portrait crop, garment is the clear focal point, well-lit, no harsh shadows obscuring fabric detail.",
@@ -2044,9 +2058,9 @@ function buildImageManifest(meta){
   const lines=[]; let n=0;
   const add=(role)=>{ n++; lines.push(`IMAGE ${n}: ${role}`); };
   const usesModel = (meta.mode==='model'||meta.mode==='move');
-  if(S.refFull)   add('SOURCE GARMENT REFERENCE (full-body / one-piece) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
-  if(S.refTop)    add('SOURCE GARMENT REFERENCE (top) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
-  if(S.refBottom) add('SOURCE GARMENT REFERENCE (bottom) — copy the GARMENT only; ignore any person, body, face, hair or background shown in it.');
+  if(S.refFull)   add('SOURCE GARMENT REFERENCE (full-body / one-piece) — copy the GARMENT only; it guides the WORN garment and must NEVER appear as a separate floating, standalone or ghost-mannequin object in an on-model scene; ignore any person, body, face, hair or background shown in it.');
+  if(S.refTop)    add('SOURCE GARMENT REFERENCE (top) — copy the GARMENT only; it guides the WORN garment and must NEVER appear as a separate floating, standalone or ghost-mannequin object in an on-model scene; ignore any person, body, face, hair or background shown in it.');
+  if(S.refBottom) add('SOURCE GARMENT REFERENCE (bottom) — copy the GARMENT only; it guides the WORN garment and must NEVER appear as a separate floating, standalone or ghost-mannequin object in an on-model scene; ignore any person, body, face, hair or background shown in it.');
   if(S.lockedGarment) add('LOCKED GARMENT — the exact physical garment to reproduce across shots; copy ONLY the garment, ignore any person or background in it.');
   if(S.lockedModel && usesModel) add('LOCKED MODEL IDENTITY — the exact person to reproduce (face, build, hair, skin, sex); copy ONLY the identity, and IGNORE its garment, pose, background and lighting.');
   if(S.lockedBackground && usesModel && !isCutoutMeta(meta)) add('LOCKED BACKGROUND — an EMPTY scene plate (no person); reproduce ONLY the setting. Never take any person, pose or clothing from this image.');
@@ -2261,6 +2275,7 @@ ${angleClause(meta.angle)}
 ${poseClause(meta)}
 ${complementClause(meta)}${youthClause(meta.model)}
 ${refClause}
+${SINGLE_SUBJECT_RULE}
 ${dir}
 Frame the full figure with headroom and space around the body (this still will be animated into a motion clip, so leave room to move). Sharp focus on the garment, true-to-life proportions, no extra limbs, no on-image text, watermarks or logos. 3:4 portrait.`;
 }
